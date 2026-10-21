@@ -25,6 +25,7 @@ import { adminRouter } from './routes/admin.js';
 import { publicRouter } from './routes/public.js';
 import { cronRouter } from './routes/cron.js';
 import { purgeExpiredSessions } from './lib/sessions.js';
+import { purgeExpiredRateLimits } from './lib/rate-limit-store.js';
 import { queryRows, setRow, deleteRow, nextNumericIds } from './db/firestore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,6 +35,20 @@ const publicDir = path.join(projectRoot, 'public');
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const isProd = NODE_ENV === 'production';
 
+// Dev-only graceful shutdown plumbing (see the /__shutdown route below).
+let shutdownToken = '';
+let onShutdown = null;
+
+/** Called by server/index.js with the one-time token of this process. */
+export function setShutdownToken(token) {
+  shutdownToken = token;
+}
+
+/** Called by server/index.js with the function that stops the process. */
+export function setShutdownHandler(fn) {
+  onShutdown = fn;
+}
+
 // Runs once per process. On Vercel a cold instance boots on the first request
 // it handles; the promise is cached so concurrent requests share one run.
 let bootPromise = null;
@@ -41,8 +56,16 @@ export function bootstrap() {
   if (!bootPromise) {
     bootPromise = (async () => {
       await initSchema();
-      await ensureDefaultAdmin();
-      await purgeExpiredSessions();
+      // These three are independent of each other, so they run together.
+      await Promise.all([
+        ensureDefaultAdmin(),
+        purgeExpiredSessions(),
+        // Rate-limit counters expire on their own, but only when the sweep
+        // gets to them - a failure here must not keep the app from starting.
+        purgeExpiredRateLimits().catch((err) => {
+          console.warn('[rate-limit] Could not purge expired counters:', err.message);
+        }),
+      ]);
     })().catch((err) => {
       bootPromise = null; // allow a later request to retry
       throw err;
@@ -161,6 +184,24 @@ app.get('/admin/*', (req, res, next) => {
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+
+// Dev-only graceful restart hook, used by restart-server.ps1. It lives here
+// (instead of in server/index.js) because the catch-all 404 handler below is
+// registered first and would otherwise swallow the request. The request must
+// come from the local machine and carry the one-time token that the entry
+// point writes to data/shutdown.token.
+if (!isProd) {
+  app.post('/__shutdown', (req, res) => {
+    const ip = req.socket.remoteAddress || '';
+    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+    if (!isLocal || req.get('x-shutdown-token') !== shutdownToken) {
+      return res.status(403).json({ ok: false });
+    }
+    res.json({ ok: true });
+    // Give the response a moment to reach the client before the process exits.
+    if (onShutdown) setTimeout(() => onShutdown('restart script'), 250);
+  });
+}
 
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {

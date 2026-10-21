@@ -5,8 +5,8 @@ $ErrorActionPreference = 'SilentlyContinue'
 # (including the editor/agent running this command).
 $root = "c:\Users\USER\Documents\DHL Website"
 
-# Ask the server to shut down cleanly so PGlite can flush to disk. Force-killing
-# it can corrupt the embedded database.
+# Ask the server to shut down cleanly so pending writes are flushed and the
+# Firestore client is closed. Force-killing it can leave a request hanging.
 $tokenFile = Join-Path $root "data\shutdown.token"
 if (Test-Path $tokenFile) {
     $token = (Get-Content $tokenFile -Raw).Trim()
@@ -37,14 +37,6 @@ if (-not $released) {
         Stop-Process -Id $c.OwningProcess -Force
     }
     Start-Sleep -Seconds 2
-
-    # A force-kill leaves PGlite's lock file behind, which makes the next start
-    # abort. Remove it so the embedded database can reopen cleanly.
-    $pidFile = Join-Path $root "data\pgdata\postmaster.pid"
-    if (Test-Path $pidFile) {
-        Write-Host "Removing stale PGlite lock ($pidFile)..."
-        Remove-Item $pidFile -Force
-    }
 }
 
 # Start the server fresh, logging to boot.log / boot-err.log
@@ -52,8 +44,13 @@ Start-Process -FilePath "node" -ArgumentList "server/index.js" -WorkingDirectory
     -RedirectStandardOutput (Join-Path $root "boot.log") `
     -RedirectStandardError (Join-Path $root "boot-err.log") -WindowStyle Hidden
 
-Start-Sleep -Seconds 8
-$listening = Get-NetTCPConnection -LocalPort 3999 -State Listen
+Start-Sleep -Seconds 2
+$listening = $null
+for ($i = 0; $i -lt 60; $i++) {
+    $listening = Get-NetTCPConnection -LocalPort 3999 -State Listen -ErrorAction SilentlyContinue
+    if ($listening) { break }
+    Start-Sleep -Seconds 1
+}
 if ($listening) {
     Write-Host "Server LISTENING on 3999 (PID $($listening[0].OwningProcess))"
 } else {

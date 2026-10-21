@@ -44,8 +44,9 @@ Check "admin login" ($login.ok -eq $true)
 
 # 4. Wrong password rejected (must send the same session so CSRF passes and the
 #    request actually reaches the auth handler -> 401, not a 403 CSRF error).
-#    429 is also accepted: the login limiter allows 8 attempts per 15 minutes
-#    per email, so repeated smoke runs can exhaust it.
+#    429 is also accepted: the login limiter allows 8 failed attempts per 15
+#    minutes per email, and the counters live in Firestore, so they survive a
+#    restart of the server. "npm run rate-limits:reset" clears them.
 try {
   $wrongBody = @{ email = $envVars['ADMIN_EMAIL']; password = 'wrong' } | ConvertTo-Json
   Invoke-RestMethod "$base/api/auth/login" -Method Post -Body $wrongBody -ContentType 'application/json' -WebSession $sess -Headers $h | Out-Null
@@ -53,7 +54,7 @@ try {
 } catch {
   $code = $_.Exception.Response.StatusCode.value__
   Check "wrong password rejected" ($code -eq 401 -or $code -eq 429)
-  if ($code -eq 429) { Write-Host "      (login rate limit hit - 8 attempts per 15 min; restart the server to reset)" }
+  if ($code -eq 429) { Write-Host "      (login rate limit hit - 8 failed attempts per 15 min; run 'npm run rate-limits:reset' to clear it)" }
 }
 
 # 5. Dashboard stats

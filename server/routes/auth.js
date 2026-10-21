@@ -4,25 +4,84 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import crypto from 'node:crypto';
+import net from 'node:net';
 import { queryRows, getRow, updateRow } from '../db/firestore.js';
 import { hashPassword, verifyPassword, requireAuth, loadAdmin, SESSION_COOKIE_NAME } from '../lib/auth.js';
 import { email, str, ValidationError } from '../lib/validate.js';
 import { logActivity } from '../lib/activity.js';
+import { FirestoreRateLimitStore, rateLimitNamespace } from '../lib/rate-limit-store.js';
 
 export const authRouter = express.Router();
 
-// Strict limiter for login attempts (brute-force protection).
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 8,
+// --- Login rate limiting -----------------------------------------------------
+//
+// The counters live in Firestore so that every serverless instance shares
+// them: with the in-memory store a brute-force attempt would get `limit` tries
+// per warm instance instead of `limit` tries overall. See
+// server/lib/rate-limit-store.js for the cost and safety notes.
+//
+// Two budgets are enforced, one per IP and one per account. The IP budget is
+// checked first, so a spray over many accounts only touches one counter
+// instead of one counter per account.
+
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LIMIT_PER_IP = 20;
+const LOGIN_LIMIT_PER_ACCOUNT = 8;
+
+const limiterNamespace = rateLimitNamespace();
+
+// Every limiter needs its own store instance (express-rate-limit refuses to
+// share one) and its own prefix (it uses the prefix to tell two limiters
+// apart while looking for a key that was counted twice in the same request).
+const ipLoginStore = new FirestoreRateLimitStore({ prefix: `login-ip:${limiterNamespace}` });
+const accountLoginStore = new FirestoreRateLimitStore({ prefix: `login-account:${limiterNamespace}` });
+
+// Normalises the client address into a rate-limit key.
+// IPv6 clients are usually handed a whole /64, so counting every address in
+// that prefix would let a single host rotate through billions of them; the
+// prefix counts as one client.
+function clientKey(req) {
+  const raw = req.ip || req.socket?.remoteAddress || '';
+  const ip = raw.startsWith('::ffff:') ? raw.slice(7) : raw;
+  if (net.isIPv4(ip)) return ip;
+  if (!net.isIPv6(ip)) return 'unknown';
+  const [head, tail] = ip.split('::');
+  const headParts = head ? head.split(':') : [];
+  const tailParts = tail ? tail.split(':') : [];
+  const missing = 8 - headParts.length - tailParts.length;
+  const parts = [...headParts, ...new Array(Math.max(missing, 0)).fill('0'), ...tailParts];
+  return `${parts.slice(0, 4).map((p) => p.padStart(4, '0')).join(':')}::/64`;
+}
+
+// Only failed logins should eat the budget, so a successful login is given
+// back (skipSuccessfulRequests) and only real failures add up.
+const loginIpLimiter = rateLimit({
+  windowMs: LOGIN_WINDOW_MS,
+  limit: LOGIN_LIMIT_PER_IP,
   standardHeaders: true,
   legacyHeaders: false,
+  store: ipLoginStore,
+  skipSuccessfulRequests: true,
   message: { ok: false, error: 'Too many login attempts. Please try again in a few minutes.' },
-  keyGenerator: (req) => (req.body && req.body.email ? String(req.body.email).toLowerCase() : req.ip),
+  keyGenerator: (req) => clientKey(req),
+});
+
+const loginAccountLimiter = rateLimit({
+  windowMs: LOGIN_WINDOW_MS,
+  limit: LOGIN_LIMIT_PER_ACCOUNT,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: accountLoginStore,
+  skipSuccessfulRequests: true,
+  message: { ok: false, error: 'Too many login attempts. Please try again in a few minutes.' },
+  keyGenerator: (req) => {
+    const value = req.body && req.body.email ? String(req.body.email).trim().toLowerCase() : '';
+    return value || 'no-email';
+  },
 });
 
 // Login
-authRouter.post('/login', loginLimiter, async (req, res, next) => {
+authRouter.post('/login', loginIpLimiter, loginAccountLimiter, async (req, res, next) => {
   try {
     const emailValue = email(req.body.email, { field: 'Email' });
     const password = str(req.body.password, { field: 'Password', min: 1, max: 200 });

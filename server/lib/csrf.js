@@ -37,6 +37,10 @@ export function csrfProtect(req, res, next) {
   // does not mutate state, so we allow it without a CSRF token.
   if (req.path.startsWith('/api/track')) return next();
 
+  // The dev-only graceful shutdown endpoint has its own one-time token and a
+  // loopback check, and is not part of the browser session flow.
+  if (req.path === '/__shutdown') return next();
+
   const sessionToken = req.session && req.session.csrfToken;
   const headerToken = req.get('X-CSRF-Token');
   const bodyToken = req.body && req.body._csrf;

@@ -12,7 +12,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import { app, bootstrap } from './app.js';
+import { app, bootstrap, setShutdownToken, setShutdownHandler } from './app.js';
 import { closeFirestore } from './db/firestore.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -26,20 +26,13 @@ const isProd = NODE_ENV === 'production';
 await bootstrap();
 
 // Dev-only graceful restart hook used by restart-server.ps1. Force-killing a
-// running server can leave in-flight writes unfinished, so the script asks the
-// process to shut down cleanly instead. Loopback + per-run token only.
+// running server can leave in-flight requests unfinished, so the script asks
+// the process to shut down cleanly instead. Loopback + per-run token only.
 const shutdownToken = crypto.randomBytes(24).toString('hex');
 const shutdownTokenFile = path.join(projectRoot, 'data', 'shutdown.token');
 if (!isProd) {
-  app.post('/__shutdown', (req, res) => {
-    const ip = req.socket.remoteAddress || '';
-    const isLocal = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
-    if (!isLocal || req.get('x-shutdown-token') !== shutdownToken) {
-      return res.status(403).json({ ok: false });
-    }
-    res.json({ ok: true });
-    setTimeout(() => gracefulShutdown('restart script'), 100);
-  });
+  setShutdownToken(shutdownToken);
+  setShutdownHandler((reason) => gracefulShutdown(reason));
 }
 
 function lanAddresses() {
@@ -66,6 +59,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 
   if (!isProd) {
     try {
+      // The folder holds the dev-only shutdown token; create it if it is gone
+      // (a fresh clone has no "data" directory at all).
+      fs.mkdirSync(path.dirname(shutdownTokenFile), { recursive: true });
       fs.writeFileSync(shutdownTokenFile, shutdownToken);
     } catch (err) {
       console.warn('[server] Could not write shutdown token:', err.message);

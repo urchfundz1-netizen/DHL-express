@@ -4,6 +4,7 @@ node_modules/
 # Environment
 .env
 .env.*
+!.env.example
 
 # Firebase service account keys / CLI caches
 *serviceAccount*.json

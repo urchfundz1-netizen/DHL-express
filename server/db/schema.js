@@ -26,11 +26,14 @@ export async function initSchema() {
     `[db] Firestore ready (project: ${status.projectId}${status.emulator ? ', emulator' : ''})`
   );
 
-  for (const name of Object.keys(COLLECTIONS)) {
-    if (!COLLECTIONS[name].numericId) continue;
-    // eslint-disable-next-line no-await-in-loop
-    const max = await maxNumericId(name);
-    // eslint-disable-next-line no-await-in-loop
-    await ensureCounterAtLeast(name, max);
-  }
+  // The collections are independent of each other, so they are checked in
+  // parallel: one round trip instead of two per collection.
+  await Promise.all(
+    Object.keys(COLLECTIONS)
+      .filter((name) => COLLECTIONS[name].numericId)
+      .map(async (name) => {
+        const max = await maxNumericId(name);
+        await ensureCounterAtLeast(name, max);
+      })
+  );
 }

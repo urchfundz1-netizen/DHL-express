@@ -8,6 +8,7 @@
 
 import express from 'express';
 import { purgeExpiredSessions } from '../lib/sessions.js';
+import { purgeExpiredRateLimits } from '../lib/rate-limit-store.js';
 
 export const cronRouter = express.Router();
 
@@ -26,6 +27,30 @@ cronRouter.get('/purge-sessions', async (req, res, next) => {
     if (!authorized(req)) return res.status(401).json({ ok: false, error: 'Unauthorized' });
     await purgeExpiredSessions();
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+cronRouter.get('/purge-rate-limits', async (req, res, next) => {
+  try {
+    if (!authorized(req)) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const removed = await purgeExpiredRateLimits();
+    res.json({ ok: true, removed });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The daily job runs both sweeps. Vercel's Hobby plan only allows a couple of
+// cron entries, so one endpoint does the whole housekeeping instead of one
+// endpoint per task.
+cronRouter.get('/purge-maintenance', async (req, res, next) => {
+  try {
+    if (!authorized(req)) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    await purgeExpiredSessions();
+    const removed = await purgeExpiredRateLimits();
+    res.json({ ok: true, rateLimitsRemoved: removed });
   } catch (err) {
     next(err);
   }
