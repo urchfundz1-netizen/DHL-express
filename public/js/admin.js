@@ -601,9 +601,13 @@ async function openShipmentModal(id) {
       <div class="fixed inset-0 z-50 flex items-center justify-center bg-ink/50 p-4" data-modal-backdrop>
         <div class="rounded-xl2 bg-white p-8 text-center shadow-card-lg">
           <p class="font-semibold text-brand-red">${escapeHtml(err.message)}</p>
-          <button class="btn-outline mt-4" onclick="document.getElementById('modalHost').innerHTML=''">Close</button>
+          <button class="btn-outline mt-4" data-modal-close>Close</button>
         </div>
       </div>`;
+    // Inline handlers are blocked by the production CSP (script-src-attr 'none').
+    document.querySelector('#modalHost [data-modal-close]').addEventListener('click', () => {
+      document.getElementById('modalHost').innerHTML = '';
+    });
   }
 }
 

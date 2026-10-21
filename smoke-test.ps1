@@ -85,5 +85,35 @@ catch { Check "unauth blocked" ($_.Exception.Response.StatusCode.value__ -eq 401
 # 9. Clean up test shipment
 Invoke-RestMethod "$base/api/admin/shipments/$($created.id)" -Method Delete -WebSession $sess -Headers $h | Out-Null
 
+# 10. No inline scripts in the public HTML. The production CSP only allows
+#     'self' scripts, so an inline <script> block is silently dropped by the
+#     browser - that is how the track page lost its form handler and its
+#     scroll-reveal animations.
+$inlinePages = @()
+Get-ChildItem "$PSScriptRoot\public" -Recurse -Filter *.html | ForEach-Object {
+  $html = [System.IO.File]::ReadAllText($_.FullName)
+  if ($html -match '(?s)<script(?![^>]*\bsrc=)[^>]*>') {
+    $inlinePages += $_.Name
+  }
+}
+Check "no inline scripts in public HTML" ($inlinePages.Count -eq 0)
+if ($inlinePages.Count -gt 0) {
+  Write-Host "      (inline <script> found in: $($inlinePages -join ', ') - move the code into /js/*.js)"
+}
+
+# 11. No inline event handlers (onclick=...). The production CSP sets
+#     script-src-attr 'none', so those handlers never run either.
+$handlerPages = @()
+Get-ChildItem "$PSScriptRoot\public" -Recurse -Include *.html,*.js | ForEach-Object {
+  $src = [System.IO.File]::ReadAllText($_.FullName)
+  if ($src -match '\son(click|load|change|error|submit|input|mouseover)\s*=') {
+    $handlerPages += $_.Name
+  }
+}
+Check "no inline event handlers in public assets" ($handlerPages.Count -eq 0)
+if ($handlerPages.Count -gt 0) {
+  Write-Host "      (inline handler found in: $($handlerPages -join ', ') - use addEventListener instead)"
+}
+
 Write-Host ""
 Write-Host "RESULT: $pass passed, $fail failed"

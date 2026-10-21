@@ -85,7 +85,14 @@ app.use(
           directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", 'https://translate.google.com', 'https://translate.googleapis.com'],
-            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com', 'https://translate.googleapis.com'],
+            styleSrc: [
+              "'self'",
+              "'unsafe-inline'",
+              'https://fonts.googleapis.com',
+              'https://fonts.gstatic.com',
+              'https://translate.googleapis.com',
+              'https://www.gstatic.com',
+            ],
             imgSrc: ["'self'", 'data:', 'https:'],
             fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
             connectSrc: ["'self'", 'https://translate.googleapis.com', 'https://translate.google.com'],
@@ -149,6 +156,10 @@ app.use('/api', publicRouter);
 app.use('/api/cron', cronRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
+
+// Browsers request /favicon.ico even when the page declares an SVG icon.
+// Redirect it instead of serving a 404.
+app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
 
 // Static files. On Vercel these are normally served by the CDN (see
 // vercel.json), but this keeps local `node server/index.js` usage working.

@@ -40,6 +40,7 @@ A complete, production-style **delivery & shipment tracking platform** — a pro
 - **Helmet** security headers, strict Content-Security-Policy in production.
 - Server-side input validation on every endpoint; the public tracking endpoint exposes customer-safe fields only (never internal notes, admin comments, or delay history).
 - Firestore is only reachable through the server (Admin SDK); the client rules deny every direct read and write.
+- The production CSP allows **no inline scripts and no inline event handlers** (`script-src 'self'`, `script-src-attr 'none'`). Page behaviour therefore lives in files under `public/js/`; a `<script>` block inside an HTML file is silently dropped by the browser. `smoke-test.ps1` fails if one comes back.
 
 ---
 
