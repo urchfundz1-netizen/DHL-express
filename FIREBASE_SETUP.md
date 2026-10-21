@@ -1,5 +1,10 @@
 # Firebase setup for SwiftNova Global Express
 
+> **Status: done.** The site runs on Firestore (project `dhl-247`) and the old
+> embedded-Postgres data has been migrated. The steps below are kept for
+> reference: sections 1–5 are what a new project needs, the last section
+> describes the migration that has already been performed.
+
 The site now stores **everything** in **Cloud Firestore**: shipments, the
 tracking timeline, comments, admin accounts, sessions and the audit log. That
 means the admin dashboard and the customer tracking page work from any device
