@@ -1,0 +1,33 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page Not Found — Express Delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="flex min-h-screen flex-col bg-white">
+  <div data-site-header></div>
+  <main class="flex flex-1 items-center justify-center px-4 py-20">
+    <div class="text-center reveal">
+      <div class="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-brand-yellow/20 text-brand-yellow-700 animate-bounce">
+        <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h3.5L21 14v2h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>
+      </div>
+      <p class="text-7xl font-extrabold text-brand-yellow sm:text-8xl">404</p>
+      <h1 class="mt-4 text-2xl font-bold text-ink sm:text-3xl">This package went off-route</h1>
+      <p class="mt-2 text-ink/60">The page you're looking for doesn't exist or has moved.</p>
+      <div class="mt-6 flex flex-wrap justify-center gap-3">
+        <a href="/" class="btn-primary-lg">Back to home</a>
+        <a href="/track" class="btn-outline">Track a shipment</a>
+      </div>
+    </div>
+  </main>
+  <div data-site-footer></div>
+  <script src="/js/shared.js"></script>
+  <script>mountChrome('');</script>
+</body>
+</html>

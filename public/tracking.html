@@ -1,0 +1,348 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipment Tracking Result — Express Delivery</title>
+  <meta name="description" content="Live Express Delivery shipment tracking result: current status, journey, scan history, delivery countdown, and public updates." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <style>
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .track-spinner {
+      height: 40px;
+      width: 40px;
+      border-radius: 9999px;
+      border: 4px solid #eee;
+      border-top-color: #d40511;
+      animation: spin 1s linear infinite;
+    }
+
+    /* ================= Tracking result (sky + plane progress) ================= */
+    /* Registered so the plane position can transition smoothly. */
+    @property --plane-p { syntax: "<number>"; inherits: true; initial-value: 0; }
+
+    :root {
+      --tk-bg: #f4f5f7;
+      --tk-card: #fff;
+      --tk-ink: #15171a;
+      --tk-muted: #7b8088;
+      --tk-dark: #121314;
+      --tk-yellow: #ffcc00;
+      --tk-red: #d40511;
+      --tk-ok: #5b9e1f;
+      --tk-line: #9b9ea3;
+      --tk-rule: #d5d7da;
+      --progress: 0%;
+      --plane-p: 0;
+    }
+
+    .tk-page { background: var(--tk-bg); }
+    .tk-result { gap: 12px; max-width: 640px; margin: 0 auto; }
+    /* Specificity must beat the shared `.hidden` rule from styles.css. */
+    .tk-result:not(.hidden) { display: grid; }
+
+    button:focus-visible, input:focus-visible {
+      outline: 3px solid var(--tk-red);
+      outline-offset: 2px;
+    }
+
+    /* Top bar */
+    .tk-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .tk-top h2 { font-size: 1.6em; font-weight: 400; }
+    .tk-back {
+      border: 0; background: var(--tk-card); color: var(--tk-ink);
+      border-radius: 40px; padding: 12px 18px; cursor: pointer;
+      font: 500 .9em/1 "Inter", system-ui, sans-serif;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+    }
+    .tk-back:hover { background: var(--tk-yellow); }
+
+    /* Sky + plane (the plane's position IS the progress bar) */
+    .tk-sky {
+      position: relative; height: 200px; overflow: hidden;
+      border-radius: 22px; container-type: inline-size;
+      background: linear-gradient(180deg, #eaf0f7, #f9fbfd);
+    }
+    .tk-cloud {
+      position: absolute; left: 0; height: 36px; border-radius: 40px;
+      background: #fff; filter: blur(10px); opacity: .85;
+      animation: tk-drift linear infinite;
+    }
+    .tk-cloud.c1 { width: 140px; top: 120px; animation-duration: 9s; animation-delay: -2s; }
+    .tk-cloud.c2 { width: 200px; top: 150px; animation-duration: 14s; animation-delay: -8s; opacity: .6; }
+    .tk-cloud.c3 { width: 100px; top: 70px; animation-duration: 11s; animation-delay: -5s; opacity: .5; }
+    @keyframes tk-drift { from { transform: translateX(110cqw); } to { transform: translateX(-60cqw); } }
+
+    .tk-streak {
+      position: absolute; left: 0; height: 2px; border-radius: 2px;
+      background: linear-gradient(90deg, transparent, rgba(120, 130, 145, .4));
+      animation: tk-streak 1.6s linear infinite;
+    }
+    .tk-streak.s1 { width: 70px; top: 90px; }
+    .tk-streak.s2 { width: 50px; top: 118px; animation-delay: -.6s; }
+    .tk-streak.s3 { width: 90px; top: 62px; animation-delay: -1.1s; }
+    @keyframes tk-streak {
+      from { transform: translateX(105cqw); opacity: 0; }
+      20% { opacity: 1; }
+      to { transform: translateX(-30cqw); opacity: 0; }
+    }
+
+    /* `left` spans the full track minus the plane width, so the plane never
+       hangs outside the sky at 0% or 100% progress. --plane-p is 0..1. */
+    .tk-plane-pos {
+      position: absolute; top: 22px; width: min(300px, 80%);
+      left: calc(var(--plane-p) * (100% - min(300px, 80%)));
+      transition: left .9s cubic-bezier(.4, 0, .2, 1);
+    }
+    .tk-plane { animation: tk-fly 5s ease-in-out infinite; transform-origin: 60% 50%; }
+    @keyframes tk-fly {
+      0%, 100% { transform: translate(0, 0) rotate(-1deg); }
+      50% { transform: translate(14px, -12px) rotate(-3.5deg); }
+    }
+    .tk-plane svg { width: 100%; display: block; overflow: visible; filter: drop-shadow(0 18px 14px rgba(40, 50, 70, .18)); }
+
+    /* Live progress readout driven by the shipment status (0-100%). */
+    .tk-pct {
+      position: absolute; left: 14px; bottom: 12px; z-index: 2;
+      background: rgba(18, 19, 20, .86); color: #fff;
+      border-radius: 30px; padding: 7px 13px;
+      font: 600 12px/1 "Inter", system-ui, sans-serif;
+      letter-spacing: .3px; white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(20, 30, 50, .18);
+    }
+
+    /* Route card */
+    .tk-route {
+      background: var(--tk-dark); color: #fff; border-radius: 22px;
+      padding: 18px 20px 16px; display: grid; gap: 12px;
+    }
+    .tk-row { display: flex; justify-content: space-between; font-size: 12px; color: #aeb3ba; gap: 10px; }
+    .tk-route-line { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+    .tk-code { font-size: 34px; font-weight: 500; }
+    .tk-track { position: relative; height: 24px; }
+    .tk-track::before {
+      content: ""; position: absolute; left: 0; right: 0; top: 50%;
+      border-top: 2px dashed #666b72;
+    }
+    .tk-track .done {
+      position: absolute; left: 0; top: 50%; height: 6px; width: var(--progress);
+      transform: translateY(-50%); border-radius: 6px;
+      background: linear-gradient(90deg, rgba(255, 204, 0, .15), var(--tk-yellow));
+      transition: width .9s cubic-bezier(.4, 0, .2, 1);
+    }
+    .tk-pill {
+      border: 1px solid #55595f; border-radius: 20px; padding: 6px 12px;
+      color: #ddd; font-size: 12px; letter-spacing: .4px;
+    }
+
+    /* Info cards */
+    .tk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .tk-card {
+      background: var(--tk-card); border-radius: 22px; padding: 18px;
+      display: grid; gap: 8px; align-content: end; min-height: 96px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .08);
+    }
+    .tk-card.wide { grid-column: 1 / -1; text-align: center; min-height: 0; }
+    .tk-card .label { font-size: 14px; color: var(--tk-muted); }
+    .tk-card .value { font-size: 16px; font-weight: 500; }
+
+    /* Timeline grouped by day */
+    .tk-timeline {
+      position: relative; list-style: none; background: var(--tk-card);
+      border-radius: 22px; padding: 8px 18px 8px 0; margin-top: 4px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .08);
+    }
+    .tk-timeline::before {
+      content: ""; position: absolute; left: 37px; top: 44px; bottom: 28px;
+      width: 2px; background: var(--tk-line);
+    }
+    .tk-timeline.tk-empty::before { display: none; }
+    .tk-empty-note { padding-left: 80px; }
+    .tk-group { border-bottom: 1px solid var(--tk-rule); padding: 1.1em 0 .4em; }
+    .tk-group:last-child { border-bottom: 0; }
+    .tk-day { padding-left: 80px; margin-bottom: 1em; }
+    .tk-day .weekday { font-family: Georgia, serif; font-size: 1.1em; }
+    .tk-day .date { font-weight: 700; font-size: 1.15em; text-transform: uppercase; }
+    .tk-event { position: relative; padding: 0 0 1.3em 80px; }
+    .tk-event:last-child { padding-bottom: .6em; }
+    .tk-event .title { font-weight: 700; font-size: 1.08em; margin: .2em 0; }
+    .tk-event .sub { text-transform: uppercase; font-size: .95em; color: var(--tk-muted); }
+    .tk-event.ok .title { color: var(--tk-ok); }
+    .tk-marker {
+      position: absolute; left: 18px; top: -2px; width: 40px; height: 40px;
+      display: grid; place-items: center; background: var(--tk-card);
+    }
+    .tk-event.ok .tk-marker { background: none; }
+    .tk-check {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--tk-ok);
+      display: grid; place-items: center;
+    }
+
+    @media (max-width: 480px) {
+      .tk-day, .tk-event { padding-left: 68px; }
+      .tk-empty-note { padding-left: 68px; }
+      .tk-timeline::before { left: 31px; }
+      .tk-marker { left: 11px; }
+      .tk-code { font-size: 28px; }
+    }
+
+    /* See package details (links to the dedicated details page) */
+    .tk-details-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; border: 0; cursor: pointer;
+      background: var(--tk-dark); color: #fff;
+      border-radius: 22px; padding: 16px 20px;
+      font: 600 .95em/1 "Inter", system-ui, sans-serif;
+      letter-spacing: .2px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 8px 24px rgba(16, 24, 40, .1);
+      transition: background .2s, transform .12s;
+    }
+    .tk-details-btn:hover { background: var(--tk-yellow); color: var(--tk-ink); }
+    .tk-details-btn:active { transform: scale(.99); }
+    .tk-details-chev { width: 18px; height: 18px; }
+
+    @keyframes tk-rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: none; }
+    }
+    .tk-card { animation: tk-rise .45s ease-out both; }
+    .tk-grid .tk-card:nth-child(2) { animation-delay: .07s; }
+    .tk-grid .tk-card:nth-child(3) { animation-delay: .14s; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tk-cloud, .tk-streak, .tk-plane, .tk-card { animation: none; }
+      .tk-plane-pos, .tk-track .done { transition: none; }
+    }
+  </style>
+</head>
+
+<body class="flex min-h-screen flex-col bg-white">
+  <div data-site-header></div>
+
+  <main class="flex-1">
+    <!-- ============ Search band: track another shipment from this page ============ -->
+    <section class="relative overflow-hidden bg-ink text-white">
+      <div class="pointer-events-none absolute inset-0 opacity-[0.12]" style="background-image:repeating-linear-gradient(115deg, #FFCC00 0px, #FFCC00 3px, transparent 3px, transparent 26px);"></div>
+      <div class="absolute inset-x-0 bottom-0 h-2 bg-gradient-to-r from-brand-yellow via-brand-red to-brand-yellow"></div>
+
+      <div class="container-x relative py-10 reveal">
+        <p class="h-eyebrow">Shipment tracking</p>
+        <h1 class="text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">Track your shipment</h1>
+        <p class="mt-2 max-w-2xl text-sm text-white/70">Enter a Express Delivery tracking number to see its live status, journey, and estimated delivery.</p>
+
+        <form id="trackBarForm" class="mt-6 flex max-w-2xl flex-col gap-3 sm:flex-row" novalidate>
+          <input
+            id="trackBarInput"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            aria-label="Tracking number"
+            placeholder="SWN 1234 5678 901 C"
+            class="input flex-1 bg-white font-semibold uppercase tracking-wide text-ink"
+          />
+          <button type="submit" class="btn-primary shrink-0 sm:px-8">Track</button>
+        </form>
+        <p id="trackBarError" class="hidden mt-3 inline-block rounded-lg bg-brand-red px-3.5 py-2 text-sm font-semibold text-white" role="alert"></p>
+      </div>
+    </section>
+
+    <!-- ============ Result area (states are toggled by /js/track.js) ============ -->
+    <section class="section tk-page">
+      <div class="container-x">
+
+        <!-- Loading -->
+        <div id="loadingState" class="hidden py-10 text-center">
+          <div class="track-spinner mx-auto"></div>
+          <p class="mt-4 text-sm text-ink/60">Looking up your shipment…</p>
+        </div>
+
+        <!-- Not found / API error -->
+        <div id="errorState" class="hidden">
+          <div class="card mx-auto max-w-xl p-9 text-center">
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-red/10 text-brand-red">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            </div>
+            <h2 class="mt-4 text-xl font-bold">Shipment not found</h2>
+            <p id="errorMessage" class="mt-2 text-sm text-ink/60"></p>
+            <button id="errorRetry" class="btn-outline mt-5">Try another number</button>
+          </div>
+        </div>
+
+        <!-- No tracking number supplied -->
+        <div id="emptyState" class="hidden">
+          <div class="card mx-auto max-w-xl p-9 text-center">
+            <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-yellow/20 text-brand-yellow-700">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <h2 class="mt-4 text-xl font-bold">Where is your parcel?</h2>
+            <p class="mt-2 text-sm text-ink/60">Enter your tracking number in the field above to see live status, scan history, and the delivery countdown.</p>
+            <div id="demoNumbers" class="mt-4 flex flex-wrap justify-center gap-2"></div>
+          </div>
+        </div>
+
+        <!-- Tracking result -->
+        <div id="resultState" class="hidden tk-result">
+          <div class="tk-top">
+            <h2>Shipment Status</h2>
+            <button class="tk-back" id="backBtn" type="button">Track another</button>
+          </div>
+
+          <div class="tk-sky" aria-hidden="true">
+            <div class="tk-cloud c3"></div>
+            <div class="tk-cloud c1"></div>
+            <div class="tk-cloud c2"></div>
+            <div class="tk-streak s1"></div>
+            <div class="tk-streak s2"></div>
+            <div class="tk-streak s3"></div>
+            <div class="tk-pct" id="planePct">0%</div>
+            <div class="tk-plane-pos" id="planePos">
+              <div class="tk-plane">
+                <svg viewBox="0 0 400 140" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="tkBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e3e7ec"/></linearGradient>
+                    <linearGradient id="tkWing" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset="1" stop-color="#cfd5dc"/></linearGradient>
+                  </defs>
+                  <path d="M200 60 L270 60 L240 18 L215 18Z" fill="#d40511"/>
+                  <path d="M30 62 L14 20 L50 20 L88 58Z" fill="url(#tkWing)" stroke="#d0d5dc"/>
+                  <path d="M26 68 Q26 56 62 56 L354 56 Q396 60 396 72 Q396 84 354 88 L66 88 Q26 86 26 68Z" fill="url(#tkBody)" stroke="#d0d5dc"/>
+                  <path d="M26 74 L396 74 L396 78 Q396 84 354 88 L66 88 Q26 86 26 78Z" fill="#ffcc00" opacity=".85"/>
+                  <path d="M352 62 Q378 62 386 70 L352 70Z" fill="#8f98a5"/>
+                  <g fill="#aab2bd">
+                    <circle cx="90" cy="68" r="4"/><circle cx="112" cy="68" r="4"/><circle cx="134" cy="68" r="4"/><circle cx="156" cy="68" r="4"/>
+                    <circle cx="178" cy="68" r="4"/><circle cx="200" cy="68" r="4"/><circle cx="222" cy="68" r="4"/><circle cx="244" cy="68" r="4"/>
+                    <circle cx="266" cy="68" r="4"/><circle cx="288" cy="68" r="4"/><circle cx="310" cy="68" r="4"/>
+                  </g>
+                  <path d="M150 84 L252 84 L196 134 L140 134Z" fill="url(#tkWing)" stroke="#d0d5dc"/>
+                  <rect x="196" y="92" width="62" height="26" rx="13" fill="#f7f8fa" stroke="#cfd5dc"/>
+                  <ellipse cx="256" cy="105" rx="4" ry="11" fill="#9aa3ae"/>
+                  <rect x="204" y="100" width="40" height="3" rx="2" fill="#dfe3e8"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <button class="tk-details-btn" id="detailsBtn" type="button">
+            <span>See package details</span>
+            <svg class="tk-details-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+
+          <div class="tk-route" id="routeCard"></div>
+          <div class="tk-grid" id="infoCards"></div>
+          <ol class="tk-timeline" id="timeline" aria-label="Shipment history"></ol>
+          <div id="commentsCard" class="card p-7"></div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/track.js"></script>
+</body>
+</html>

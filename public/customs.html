@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customs Clearance - Express Delivery</title>
+  <meta name="description" content="Your shipment is undergoing customs clearance. We'll update you as soon as it's cleared." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="flex min-h-screen flex-col bg-white">
+  <div data-site-header></div>
+  <main class="flex-1">
+    <section class="section">
+      <div class="container-x max-w-2xl">
+        <div class="card p-8 text-center reveal">
+          <div class="mx-auto grid h-14 w-14 place-items-center rounded-full bg-brand-yellow/20 text-brand-yellow-700">
+            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+          </div>
+          <h1 class="mt-4 h-title">Customs Clearance in Progress</h1>
+          <p class="mt-3 text-ink/70">Your shipment is currently undergoing customs clearance. This is a standard process and may take some time depending on the destination country's requirements.</p>
+          <p class="mt-3 text-ink/70">We'll update your tracking information as soon as the clearance process progresses.</p>
+          <p class="mt-1 text-ink/70">For shipment updates, contact <a href="mailto:ship247with.dhl@gmail.com" class="font-semibold text-brand-red hover:underline">ship247with.dhl@gmail.com</a>.</p>
+          <div id="customsDetail" class="mt-6"></div>
+          <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a href="/track" class="btn-primary">Back to Tracking</a>
+            <a href="/" class="btn-ghost">Return Home</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div data-site-footer></div>
+  <script src="/js/shared.js"></script>
+  <script>
+    mountChrome(); setupReveal();
+
+    // ---- Shipment context ----------------------------------------------------
+    // /customs?t=SWN... shows which shipment is held at customs, so the
+    // customer can see the route, the estimate and a way back to the timeline.
+    (function loadShipmentContext() {
+      const raw = new URLSearchParams(window.location.search).get('t');
+      const host = document.getElementById('customsDetail');
+      if (!raw || !host) return;
+
+      const norm = raw.replace(/[\s-]+/g, '').toUpperCase();
+      const pretty = (() => {
+        const body = norm.startsWith('SWN') ? norm.slice(3) : norm;
+        const groups = body.match(/.{1,4}/g) || [];
+        return (norm.startsWith('SWN') ? ['SWN', ...groups] : [body]).join(' ');
+      })();
+
+      api(`/api/track/${encodeURIComponent(norm)}`).then((data) => {
+        const s = data.shipment;
+        const eta = s.estimated_delivered_at ? fmtDateTime(s.estimated_delivered_at) : 'To be confirmed';
+        const inCustoms = s.status === 'Customs Clearance';
+        host.innerHTML = `
+          <div class="rounded-xl2 border border-ink/10 bg-ink/[0.02] p-5 text-left">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p class="text-xs font-bold uppercase tracking-widest text-ink/50">Shipment</p>
+                <p class="mt-1 text-lg font-extrabold tracking-wide text-ink">${escapeHtml(pretty)}</p>
+              </div>
+              ${statusBadge(s.status, (data.meta && data.meta.tone) || 'amber')}
+            </div>
+            <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+              <div><dt class="text-xs font-semibold uppercase tracking-wide text-ink/50">From</dt><dd class="mt-0.5 text-ink/80">${escapeHtml(s.origin_city)}, ${escapeHtml(s.origin_country)}</dd></div>
+              <div><dt class="text-xs font-semibold uppercase tracking-wide text-ink/50">To</dt><dd class="mt-0.5 text-ink/80">${escapeHtml(s.destination_city)}, ${escapeHtml(s.destination_country)}</dd></div>
+              <div><dt class="text-xs font-semibold uppercase tracking-wide text-ink/50">Current status</dt><dd class="mt-0.5 text-ink/80">${escapeHtml(s.status)}</dd></div>
+              <div><dt class="text-xs font-semibold uppercase tracking-wide text-ink/50">Estimated delivery</dt><dd class="mt-0.5 text-ink/80">${escapeHtml(eta)}</dd></div>
+            </dl>
+            ${inCustoms ? '' : `<p class="mt-4 text-sm text-ink/60">This shipment is no longer held at customs — its status has since changed.</p>`}
+            <div class="mt-5 flex flex-wrap gap-3">
+              <a href="/tracking?t=${encodeURIComponent(norm)}&full=1" class="btn-primary">View full tracking timeline</a>
+            </div>
+          </div>`;
+      }).catch(() => {
+        // Unknown tracking number: keep the generic customs page as it is.
+      });
+    })();
+  </script>
+</body>
+</html>

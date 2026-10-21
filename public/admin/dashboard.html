@@ -1,0 +1,95 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Express Delivery Admin</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="min-h-screen bg-ink/[0.02] text-ink antialiased">
+  <!-- Mobile overlay -->
+  <div id="sidebarOverlay" class="fixed inset-0 z-30 hidden bg-ink/40 lg:hidden"></div>
+
+  <div class="flex min-h-screen">
+    <!-- Sidebar (fixed on all breakpoints; stays in place while content scrolls) -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 -translate-x-full transform bg-ink text-white transition-transform duration-200 lg:translate-x-0">
+      <div class="flex h-16 items-center border-b border-white/10 px-5">
+        <span class="brand-logo is-dark" aria-label="Express Delivery">
+  <span class="brand-mark" aria-hidden="true">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#FFCC00"/>
+      <g class="brand-speed" stroke="#D40511" stroke-width="2.2" stroke-linecap="round">
+        <path d="M4 14h5"/><path d="M3 20h6"/><path d="M5 26h4"/>
+      </g>
+      <g fill="none" stroke="#121417" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M15 14l6-3 6 3v10l-6 3-6-3V14Z"/>
+        <path d="M15 14l6 3 6-3M21 17v13"/>
+      </g>
+    </svg>
+  </span>
+  <span class="brand-text">
+    <span class="brand-word">Express <span class="brand-word-2">Delivery</span></span>
+    <span class="brand-route" aria-hidden="true">
+      <span class="brand-route-line"></span>
+      <svg class="brand-van" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 3.5h12v8H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M14 6h5l4 4v1.5h-9V6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="7" cy="12.5" r="1.7" fill="currentColor"/>
+        <circle cx="21" cy="12.5" r="1.7" fill="currentColor"/>
+      </svg>
+    </span>
+  </span>
+</span>
+      </div>
+      <nav id="sidebarNav" class="flex flex-col gap-1 p-3"></nav>
+      <div class="absolute inset-x-0 bottom-0 border-t border-white/10 p-3">
+        <a href="/" class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-white/70 hover:bg-white/5">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 001-1h3m-6 0a1 1 0 001-1v-4a1 1 0 00-1-1h-4a1 1 0 00-1 1v4a1 1 0 001 1"/></svg>
+          View website
+        </a>
+        <button id="logoutBtn" class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-brand-red hover:bg-brand-red/10">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"/></svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main (offset by the fixed sidebar's width on desktop) -->
+    <div class="flex min-w-0 flex-1 flex-col lg:ml-64">
+      <!-- Topbar -->
+      <header class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-ink/10 bg-white/90 px-4 backdrop-blur sm:px-6">
+        <div class="flex items-center gap-3">
+          <button id="sidebarToggle" class="grid h-10 w-10 place-items-center rounded-lg border border-ink/15 text-ink lg:hidden" aria-label="Toggle sidebar">
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <h1 id="pageTitle" class="text-lg font-bold tracking-tight">Dashboard</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="/track" target="_blank" class="btn-outline hidden sm:inline-flex">Tracking page</a>
+          <div class="flex items-center gap-2">
+            <div id="adminAvatar" class="grid h-9 w-9 place-items-center rounded-full bg-brand-yellow text-sm font-bold text-ink">A</div>
+            <div class="hidden sm:block">
+              <p id="adminName" class="text-sm font-semibold leading-tight">Administrator</p>
+              <p id="adminEmail" class="text-xs text-ink/50">admin@swiftnova.test</p>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- View content -->
+      <main id="viewRoot" class="flex-1 p-4 sm:p-6"><div id="view"></div></main>
+    </div>
+  </div>
+
+  <!-- Modal host -->
+  <div id="modalHost"></div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/admin.js"></script>
+</body>
+</html>

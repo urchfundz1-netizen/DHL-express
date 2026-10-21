@@ -1,0 +1,30 @@
+# Files not needed at runtime on Vercel.
+# Keeps the deployment small and avoids uploading local-only data.
+
+# Legacy embedded Postgres (only used for the one-off migration, already done)
+data/
+server/db/pool.js
+
+# One-off scripts (migration, index creation)
+scripts/
+
+# Local logs and dev artifacts
+*.log
+.fg.out
+.fg.err
+.fg.err
+restart-server.ps1
+smoke-test.ps1
+
+# Docs
+FIREBASE_SETUP.md
+
+# Vercel / editor noise
+.vercel
+.vscode
+.idea
+.firebase
+
+# Env files (real values live in the Vercel dashboard)
+.env
+.env.*

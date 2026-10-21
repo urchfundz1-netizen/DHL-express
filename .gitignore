@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+
+# Firebase service account keys / CLI caches
+*serviceAccount*.json
+firebase-debug.log
+firestore-debug.log
+.firebase/
+
+# Persistent database data (PGlite writes here)
+data/
+
+# Build output (Tailwind)
+public/css/styles.css
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

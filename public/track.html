@@ -1,0 +1,940 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Express Delivery - Track Your Shipment</title>
+  <meta name="description" content="Track your Express Delivery shipment in real time: live status, shipment journey, scan history, and an updating delivery countdown." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+  <style>
+    :root {
+      --ed-yellow: #ffcc00;
+      --ed-red: #d40511;
+      --text: #111111;
+      --muted: #666666;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Roboto", Arial, sans-serif;
+      color: var(--text);
+      background: #fff;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+
+    /* Top yellow navigation bar */
+    .top-bar {
+      height: 53px;
+      background: var(--ed-yellow);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 6.2%;
+    }
+
+    .logo {
+      color: var(--ed-red);
+      font-size: 35px;
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -2px;
+      line-height: 1;
+      transform: skew(-13deg);
+      position: relative;
+    }
+
+    .logo::before,
+    .logo::after {
+      content: "";
+      position: absolute;
+      height: 3px;
+      background: var(--ed-red);
+      width: 100%;
+      left: 0;
+    }
+
+    .logo::before { top: 5px; }
+    .logo::after { bottom: 3px; }
+
+    .header-logo {
+      max-height: 45px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .top-links {
+      display: flex;
+      align-items: center;
+      gap: 35px;
+      font-size: 13px;
+    }
+
+    .top-links a:hover,
+    .nav-links a:hover {
+      text-decoration: underline;
+    }
+
+    /* Main white navigation */
+    .navbar {
+      height: 63px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 6.2%;
+      background: #fff;
+      box-shadow: 0 3px 9px rgba(0, 0, 0, 0.12);
+      position: relative;
+      z-index: 5;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 42px;
+      font-size: 14px;
+    }
+
+    .nav-links a.active { font-weight: 700; }
+    .nav-right { font-size: 13px; }
+
+    .arrow {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-right: 1.5px solid currentColor;
+      border-bottom: 1.5px solid currentColor;
+      transform: rotate(45deg);
+      margin-left: 8px;
+      vertical-align: 3px;
+    }
+
+    /* Google-style language selector */
+    .lang-select { position: relative; }
+    .lang-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      font-size: 13px;
+      padding: 6px 4px;
+      line-height: 1;
+    }
+    .lang-btn:hover { text-decoration: underline; }
+    .lang-globe { width: 16px; height: 16px; }
+    .lang-caret { width: 12px; height: 12px; transition: transform 0.18s ease; }
+    .lang-select.open .lang-caret { transform: rotate(180deg); }
+
+    .lang-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 300px;
+      max-width: 78vw;
+      background: #fff;
+      color: #202124;
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+      border: 1px solid #e6e6e6;
+      padding: 8px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-6px);
+      transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
+      z-index: 50;
+    }
+    .lang-select.open .lang-menu {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .lang-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #eee;
+      color: #5f6368;
+    }
+    .lang-search svg { width: 16px; height: 16px; flex-shrink: 0; }
+    .lang-search input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+      color: #202124;
+      background: transparent;
+    }
+
+    .lang-list {
+      list-style: none;
+      margin: 6px 0 0;
+      padding: 0;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    .lang-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #202124;
+    }
+    .lang-list li:hover { background: #f1f3f4; }
+    .lang-list li.selected { background: #e8f0fe; color: #1967d2; font-weight: 600; }
+    .lang-list li .lang-native { color: #80868b; font-size: 12px; }
+    .lang-list li.selected .lang-native { color: #1967d2; }
+    .lang-list .lang-empty {
+      padding: 16px 12px;
+      color: #80868b;
+      font-size: 13px;
+      cursor: default;
+      justify-content: center;
+    }
+    .lang-list .lang-empty:hover { background: transparent; }
+
+    /* Hide the Google Translate top banner that gets injected */
+    .skiptranslate,
+    .goog-te-banner-frame,
+    #goog-gt-tt { display: none !important; }
+    body { top: 0 !important; }
+    .goog-text-highlight { background: none !important; box-shadow: none !important; }
+
+    /* Hero section */
+    .hero {
+      max-width: 1197px;
+      width: calc(100% - 11.2%);
+      height: 420px;
+      margin: 0 auto;
+      position: relative;
+      border-radius: 0 0 12px 12px;
+      background:
+        linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0.20),
+          rgba(0, 0, 0, 0.05)
+        ),
+        url("/images/Modern Atrium Walkway Worker.png")
+        center 48% / cover no-repeat;
+    }
+
+    /* Tracking form */
+    .tracking-area {
+      position: absolute;
+      top: 64px;
+      left: 25.5%;
+      width: 49%;
+      z-index: 2;
+    }
+
+    .tracking-area h1 {
+      color: white;
+      font-size: 25px;
+      font-weight: 800;
+      margin-bottom: 21px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    }
+
+    .tracking-form {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      min-height: 57px;
+      background: white;
+      border-radius: 12px;
+      padding: 3px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.15);
+    }
+
+    .tracking-form input {
+      flex: 1;
+      width: 0;
+      min-width: 0;
+      border: none;
+      outline: none;
+      padding: 0 12px;
+      background: transparent;
+      color: #333;
+      font-size: 15px;
+    }
+
+    .tracking-form input::placeholder {
+      color: #666;
+      opacity: 1;
+    }
+
+    .track-button {
+      height: 51px;
+      min-width: 112px;
+      border: none;
+      border-radius: 12px;
+      background: var(--ed-red);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .track-button:hover {
+      background: #a9000b;
+    }
+
+    .track-error {
+      margin-top: 12px;
+      color: #fff;
+      background: rgba(212, 5, 17, 0.92);
+      display: inline-block;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .track-error.hidden { display: none; }
+
+    /* Service cards */
+    .services {
+      width: min(738px, 90%);
+      min-height: 149px;
+      position: absolute;
+      bottom: -51px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: stretch;
+      background: #fff;
+      border-radius: 13px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.23);
+      z-index: 3;
+    }
+
+    .service-card {
+      text-align: center;
+      padding: 23px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.2s;
+    }
+
+    .service-card + .service-card {
+      border-left: 1px solid #f0f0f0;
+    }
+
+    .service-card:hover {
+      background: #fffbea;
+    }
+
+    .service-icon {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 5px;
+      color: var(--ed-red);
+    }
+
+    .service-card h2 {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 2px 0 9px;
+    }
+
+    .service-card p {
+      font-size: 11.5px;
+      line-height: 1.65;
+      color: #555;
+      max-width: 190px;
+    }
+
+    .business-card {
+      border-radius: 13px 13px 0 0;
+      margin-top: -28px;
+      padding-top: 28px;
+      min-height: 177px;
+      background: #fff;
+    }
+
+    .business-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 0;
+      height: 0;
+      border-top: 39px solid var(--ed-yellow);
+      border-left: 39px solid transparent;
+    }
+
+    /* Floating back-to-top button */
+    .back-to-top {
+      position: fixed;
+      right: 4.4%;
+      bottom: 22px;
+      width: 43px;
+      height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--ed-red);
+      border: none;
+      border-radius: 13px;
+      color: #fff;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .back-to-top span {
+      width: 14px;
+      height: 14px;
+      border-top: 2px solid white;
+      border-left: 2px solid white;
+      transform: translateY(4px) rotate(45deg);
+    }
+
+    /* Mobile responsive layout */
+    @media (max-width: 768px) {
+      .top-bar {
+        height: 52px;
+        padding: 0 5%;
+      }
+
+      .header-logo {
+        max-height: 38px;
+      }
+
+      .top-links {
+        gap: 14px;
+        font-size: 11px;
+      }
+
+      .top-links a:first-child {
+        display: none;
+      }
+
+      .navbar {
+        height: 57px;
+        padding: 0 5%;
+      }
+
+      .nav-links {
+        gap: 19px;
+        font-size: 12px;
+      }
+
+      .nav-right {
+        font-size: 11px;
+      }
+
+      .hero {
+        width: 92%;
+        height: 470px;
+        background-position: center;
+      }
+
+      .tracking-area {
+        top: 48px;
+        left: 6%;
+        width: 88%;
+      }
+
+      .tracking-area h1 {
+        font-size: 23px;
+      }
+
+      .tracking-form {
+        min-height: 54px;
+      }
+
+      .track-button {
+        min-width: 80px;
+      }
+
+      .services {
+        bottom: -195px;
+        width: 92%;
+        grid-template-columns: 1fr;
+      }
+
+      .service-card,
+      .business-card {
+        min-height: 110px;
+        margin-top: 0;
+        padding: 16px;
+        border-radius: 0;
+      }
+
+      .service-card + .service-card {
+        border-left: none;
+        border-top: 1px solid #eee;
+      }
+
+      .service-icon {
+        width: 28px;
+        height: 28px;
+        margin-bottom: 3px;
+      }
+
+      .service-card h2 {
+        margin-bottom: 5px;
+      }
+
+      .service-card p {
+        max-width: 260px;
+      }
+
+      .business-card {
+        border-radius: 0 0 12px 12px;
+      }
+
+      body {
+        padding-bottom: 215px;
+      }
+
+      .back-to-top {
+        right: 5%;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .top-links {
+        gap: 10px;
+      }
+
+      .nav-links {
+        gap: 12px;
+      }
+
+      .nav-right {
+        max-width: 125px;
+        line-height: 1.5;
+      }
+
+      .tracking-area h1 {
+        font-size: 21px;
+      }
+
+      .tracking-form input {
+        font-size: 12px;
+      }
+
+      .track-button {
+        min-width: 68px;
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="top-bar">
+        <a href="/" class="inline-flex" aria-label="Express Delivery home">
+          <span class="brand-logo" aria-label="Express Delivery">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                <rect width="40" height="40" rx="10" fill="#FFCC00"/>
+                <g class="brand-speed" stroke="#D40511" stroke-width="2.2" stroke-linecap="round">
+                  <path d="M4 14h5"/><path d="M3 20h6"/><path d="M5 26h4"/>
+                </g>
+                <g fill="none" stroke="#121417" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+                  <path d="M15 14l6-3 6 3v10l-6 3-6-3V14Z"/>
+                  <path d="M15 14l6 3 6-3M21 17v13"/>
+                </g>
+              </svg>
+            </span>
+            <span class="brand-text">
+              <span class="brand-word">Express <span class="brand-word-2">Delivery</span></span>
+              <span class="brand-route" aria-hidden="true">
+                <span class="brand-route-line"></span>
+                <svg class="brand-van" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 3.5h12v8H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                  <path d="M14 6h5l4 4v1.5h-9V6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                  <circle cx="7" cy="12.5" r="1.7" fill="currentColor"/>
+                  <circle cx="21" cy="12.5" r="1.7" fill="currentColor"/>
+                </svg>
+                <span class="brand-plane" aria-hidden="true">
+                  <span class="brand-plane-trail"></span>
+                  <svg class="brand-plane-icon" viewBox="0 0 48 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="currentColor" d="M46.5 12C46.5 9.3 44.8 7.5 42 7.3L13 7.3C9 7.3 5.5 8.6 3 10.6C2 11.2 2 12.4 3 13C5.5 15 9 16.3 13 16.3L42 16.6C44.8 16.6 46.5 14.7 46.5 12Z"/>
+                    <path fill="currentColor" d="M16 7.3 6.5 0.8 2.6 0.8 8.4 7.3Z"/>
+                    <path fill="currentColor" d="M7 8.2 0.8 6.4 0 6.6 2.8 9.4Z"/>
+                    <path fill="currentColor" d="M31 14.4 19.5 22.4 15 22.4 25.5 14.2Z"/>
+                    <ellipse cx="26.5" cy="18.6" rx="3.6" ry="1.8" transform="rotate(-8 26.5 18.6)" fill="currentColor"/>
+                  </svg>
+                </span>
+              </span>
+            </span>
+          </span>
+        </a>
+
+      <div class="top-links">
+        <div class="lang-select" id="langSelect">
+          <button class="lang-btn" id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Select language">
+            <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>
+            <span id="langCurrent">English</span>
+            <svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
+            <div class="lang-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="langSearch" type="text" placeholder="Search language" autocomplete="off" spellcheck="false" />
+            </div>
+            <ul class="lang-list" id="langList"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero" id="tracking">
+
+      <div class="tracking-area reveal">
+        <h1>Track Your Shipment</h1>
+
+        <form class="tracking-form" id="trackingForm" novalidate>
+          <input
+            id="trackingNumber"
+            type="text"
+            placeholder="Enter your tracking number(s)"
+            aria-label="Enter your tracking number"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="track-button" type="submit">
+            Track
+          </button>
+        </form>
+        <p id="trackError" class="track-error hidden" role="alert"></p>
+      </div>
+
+      <div class="services" id="services">
+
+        <!-- Ship Now -->
+        <a class="service-card reveal" href="/services">
+          <svg class="service-icon" viewBox="0 0 40 40"
+               fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="6" y="9" width="25" height="25" rx="1"/>
+            <path d="M12 5v8M19 5v8M26 5v8M6 16h25"/>
+            <path d="M12 20h3M19 20h3M26 20h1M12 25h3M19 25h3M12 30h3"/>
+            <path d="M26 24l9 12-5-1-2 4-3-15z" fill="currentColor" stroke="none"/>
+          </svg>
+          <h2>Ship Now</h2>
+          <p>Find the right service</p>
+        </a>
+
+        <!-- Get a Quote -->
+        <a class="service-card reveal" href="/contact">
+          <svg class="service-icon" viewBox="0 0 40 40"
+               fill="currentColor">
+            <path d="M8 4h17l9 9v9h-5v-7H23V7H12v26h10v4H8V4z"/>
+            <path d="M24 4v9h9z"/>
+            <path d="M19 22h3v3h-3zM19 28h3v3h-3zM24 22h3v3h-3zM24 28h3v3h-3z"/>
+            <path d="M29 27l3 3 6-7" fill="none" stroke="currentColor"
+                  stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h2>Get a Quote</h2>
+          <p>Estimate cost to share and compare</p>
+        </a>
+
+        <!-- Business Shipping -->
+        <a class="service-card business-card" href="/contact">
+          <svg class="service-icon" viewBox="0 0 40 40"
+               fill="currentColor">
+            <path d="M3 36V15h10V5h12v14h12v17H3zm5-5h5v-5H8v5zm0-9h5v-3H8v3zm10 9h5v-5h-5v5zm0-9h5v-3h-5v3zm0-9h5V9h-5v4zm10 18h4v-5h-4v5zm0-9h4v-3h-4v3z"/>
+          </svg>
+          <h2>Business Shipping</h2>
+          <p>Shipping regularly? Request a business account and profit from exclusive benefits</p>
+        </a>
+
+      </div>
+    </section>
+
+  </main>
+
+  <button class="back-to-top" id="backToTop"
+          aria-label="Back to top" title="Back to top">
+    <span></span>
+  </button>
+
+  <script src="/js/shared.js"></script>
+  <script>
+    // Submitting a tracking number sends the visitor to the dedicated results page.
+    const form = document.getElementById('trackingForm');
+    const input = document.getElementById('trackingNumber');
+    const trackError = document.getElementById('trackError');
+    const backToTop = document.getElementById('backToTop');
+
+    function goToTracking(raw) {
+      const norm = String(raw).replace(/[\s-]+/g, '').toUpperCase();
+      window.location.href = '/tracking?t=' + encodeURIComponent(norm);
+    }
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const v = input.value.trim();
+      if (!v) {
+        trackError.textContent = 'Please enter a tracking number.';
+        trackError.classList.remove('hidden');
+        input.focus();
+        return;
+      }
+      trackError.classList.add('hidden');
+      goToTracking(v);
+    });
+
+    backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    setupReveal();
+
+    // Legacy /track?t=... links are forwarded to the results page.
+    (function () {
+      const t = new URLSearchParams(window.location.search).get('t');
+      if (t) window.location.replace('/tracking?t=' + encodeURIComponent(t.replace(/[\s-]+/g, '').toUpperCase()));
+    })();
+  </script>
+
+  <!-- Google Translate element (driven by the custom dropdown above) -->
+  <div id="google_translate_element" style="position:absolute;left:-9999px;height:0;overflow:hidden;"></div>
+
+  <script>
+    // ---- Language data (name, native, Google Translate code) -----------------
+    const LANGUAGES = [
+      { name: 'English', native: 'English', code: 'en' },
+      { name: 'French', native: 'Français', code: 'fr' },
+      { name: 'Spanish', native: 'Español', code: 'es' },
+      { name: 'German', native: 'Deutsch', code: 'de' },
+      { name: 'Italian', native: 'Italiano', code: 'it' },
+      { name: 'Portuguese', native: 'Português', code: 'pt' },
+      { name: 'Dutch', native: 'Nederlands', code: 'nl' },
+      { name: 'Russian', native: 'Русский', code: 'ru' },
+      { name: 'Chinese (Simplified)', native: '简体中文', code: 'zh-CN' },
+      { name: 'Chinese (Traditional)', native: '繁體中文', code: 'zh-TW' },
+      { name: 'Japanese', native: '日本語', code: 'ja' },
+      { name: 'Korean', native: '한국어', code: 'ko' },
+      { name: 'Arabic', native: 'العربية', code: 'ar' },
+      { name: 'Hindi', native: 'हिन्दी', code: 'hi' },
+      { name: 'Bengali', native: 'বাংলা', code: 'bn' },
+      { name: 'Urdu', native: 'اردو', code: 'ur' },
+      { name: 'Turkish', native: 'Türkçe', code: 'tr' },
+      { name: 'Vietnamese', native: 'Tiếng Việt', code: 'vi' },
+      { name: 'Thai', native: 'ไทย', code: 'th' },
+      { name: 'Indonesian', native: 'Bahasa Indonesia', code: 'id' },
+      { name: 'Malay', native: 'Bahasa Melayu', code: 'ms' },
+      { name: 'Filipino', native: 'Filipino', code: 'fil' },
+      { name: 'Polish', native: 'Polski', code: 'pl' },
+      { name: 'Ukrainian', native: 'Українська', code: 'uk' },
+      { name: 'Romanian', native: 'Română', code: 'ro' },
+      { name: 'Greek', native: 'Ελληνικά', code: 'el' },
+      { name: 'Czech', native: 'Čeština', code: 'cs' },
+      { name: 'Swedish', native: 'Svenska', code: 'sv' },
+      { name: 'Norwegian', native: 'Norsk', code: 'no' },
+      { name: 'Danish', native: 'Dansk', code: 'da' },
+      { name: 'Finnish', native: 'Suomi', code: 'fi' },
+      { name: 'Hungarian', native: 'Magyar', code: 'hu' },
+      { name: 'Hebrew', native: 'עברית', code: 'he' },
+      { name: 'Persian', native: 'فارسی', code: 'fa' },
+      { name: 'Swahili', native: 'Kiswahili', code: 'sw' },
+      { name: 'Tamil', native: 'தமிழ்', code: 'ta' },
+      { name: 'Telugu', native: 'తెలుగు', code: 'te' },
+      { name: 'Marathi', native: 'मराठी', code: 'mr' },
+      { name: 'Gujarati', native: 'ગુજરાતી', code: 'gu' },
+      { name: 'Punjabi', native: 'ਪੰਜਾਬੀ', code: 'pa' },
+      { name: 'Kannada', native: 'ಕನ್ನಡ', code: 'kn' },
+      { name: 'Malayalam', native: 'മലയാളം', code: 'ml' },
+      { name: 'Sinhala', native: 'සිංහල', code: 'si' },
+      { name: 'Nepali', native: 'नेपाली', code: 'ne' },
+      { name: 'Burmese', native: 'မြန်မာ', code: 'my' },
+      { name: 'Khmer', native: 'ខ្មែរ', code: 'km' },
+      { name: 'Lao', native: 'ລາວ', code: 'lo' },
+      { name: 'Amharic', native: 'አማርኛ', code: 'am' },
+      { name: 'Hausa', native: 'Hausa', code: 'ha' },
+      { name: 'Yoruba', native: 'Yorùbá', code: 'yo' },
+      { name: 'Igbo', native: 'Igbo', code: 'ig' },
+      { name: 'Zulu', native: 'isiZulu', code: 'zu' },
+      { name: 'Afrikaans', native: 'Afrikaans', code: 'af' },
+      { name: 'Somali', native: 'Soomaali', code: 'so' },
+      { name: 'Serbian', native: 'Српски', code: 'sr' },
+      { name: 'Croatian', native: 'Hrvatski', code: 'hr' },
+      { name: 'Bulgarian', native: 'Български', code: 'bg' },
+      { name: 'Slovak', native: 'Slovenčina', code: 'sk' },
+      { name: 'Slovenian', native: 'Slovenščina', code: 'sl' },
+      { name: 'Lithuanian', native: 'Lietuvių', code: 'lt' },
+      { name: 'Latvian', native: 'Latviešu', code: 'lv' },
+      { name: 'Estonian', native: 'Eesti', code: 'et' },
+      { name: 'Catalan', native: 'Català', code: 'ca' },
+      { name: 'Basque', native: 'Euskara', code: 'eu' },
+      { name: 'Galician', native: 'Galego', code: 'gl' },
+      { name: 'Irish', native: 'Gaeilge', code: 'ga' },
+      { name: 'Welsh', native: 'Cymraeg', code: 'cy' },
+      { name: 'Icelandic', native: 'Íslenska', code: 'is' },
+      { name: 'Albanian', native: 'Shqip', code: 'sq' },
+      { name: 'Macedonian', native: 'Македонски', code: 'mk' },
+      { name: 'Bosnian', native: 'Bosanski', code: 'bs' },
+      { name: 'Georgian', native: 'ქართული', code: 'ka' },
+      { name: 'Armenian', native: 'Հայերեն', code: 'hy' },
+      { name: 'Azerbaijani', native: 'Azərbaycan', code: 'az' },
+      { name: 'Kazakh', native: 'Қазақ', code: 'kk' },
+      { name: 'Uzbek', native: 'Oʻzbek', code: 'uz' },
+      { name: 'Mongolian', native: 'Монгол', code: 'mn' },
+      { name: 'Pashto', native: 'پښتو', code: 'ps' },
+      { name: 'Kurdish', native: 'Kurdî', code: 'ku' },
+      { name: 'Maltese', native: 'Malti', code: 'mt' },
+      { name: 'Belarusian', native: 'Беларуская', code: 'be' },
+      { name: 'Haitian Creole', native: 'Kreyòl', code: 'ht' },
+      { name: 'Cebuano', native: 'Cebuano', code: 'ceb' },
+      { name: 'Hmong', native: 'Hmong', code: 'hmn' },
+      { name: 'Javanese', native: 'Basa Jawa', code: 'jw' },
+      { name: 'Sundanese', native: 'Basa Sunda', code: 'su' },
+      { name: 'Malagasy', native: 'Malagasy', code: 'mg' },
+      { name: 'Chichewa', native: 'Chichewa', code: 'ny' },
+      { name: 'Kinyarwanda', native: 'Kinyarwanda', code: 'rw' },
+      { name: 'Xhosa', native: 'isiXhosa', code: 'xh' },
+    ];
+
+    // ---- Dropdown behaviour --------------------------------------------------
+    const langSelect = document.getElementById('langSelect');
+    const langBtn = document.getElementById('langBtn');
+    const langMenu = document.getElementById('langMenu');
+    const langSearch = document.getElementById('langSearch');
+    const langList = document.getElementById('langList');
+    const langCurrent = document.getElementById('langCurrent');
+
+    // Restore a previously chosen language (Google stores it in a cookie).
+    function currentLangCode() {
+      const m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
+      if (m) {
+        const parts = decodeURIComponent(m[1]).split('/');
+        return parts[2] || 'en';
+      }
+      return 'en';
+    }
+
+    function renderLangList(filter) {
+      const q = (filter || '').trim().toLowerCase();
+      const active = currentLangCode();
+      const items = LANGUAGES.filter((l) =>
+        !q || l.name.toLowerCase().includes(q) || l.native.toLowerCase().includes(q) || l.code.toLowerCase().includes(q)
+      );
+      if (items.length === 0) {
+        langList.innerHTML = '<li class="lang-empty">No languages found</li>';
+        return;
+      }
+      langList.innerHTML = items.map((l) => `
+        <li data-code="${l.code}" class="${l.code === active ? 'selected' : ''}" role="option">
+          <span>${l.name}</span>
+          <span class="lang-native">${l.native}</span>
+        </li>`).join('');
+    }
+
+    function openLang() {
+      langSelect.classList.add('open');
+      langBtn.setAttribute('aria-expanded', 'true');
+      renderLangList('');
+      langSearch.value = '';
+      setTimeout(() => langSearch.focus(), 50);
+    }
+    function closeLang() {
+      langSelect.classList.remove('open');
+      langBtn.setAttribute('aria-expanded', 'false');
+    }
+
+    langBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      langSelect.classList.contains('open') ? closeLang() : openLang();
+    });
+    langSearch.addEventListener('input', () => renderLangList(langSearch.value));
+    langList.addEventListener('click', (e) => {
+      const li = e.target.closest('li[data-code]');
+      if (!li) return;
+      const code = li.getAttribute('data-code');
+      const lang = LANGUAGES.find((l) => l.code === code);
+      langCurrent.textContent = lang ? lang.name : code;
+      closeLang();
+      setLanguage(code);
+    });
+    document.addEventListener('click', (e) => {
+      if (!langSelect.contains(e.target)) closeLang();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeLang();
+    });
+
+    // ---- Google Translate integration ---------------------------------------
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement(
+        { pageLanguage: 'en', autoDisplay: false },
+        'google_translate_element'
+      );
+    }
+
+    // Drive the hidden Google <select> that the widget injects.
+    function setLanguage(code) {
+      // Persist across every page (Google reads this cookie on init).
+      document.cookie = 'googtrans=' + (code === 'en' ? '/en/en' : '/en/' + code) + ';path=/';
+      const trySet = () => {
+        const combo = document.querySelector('select.goog-te-combo');
+        if (combo) {
+          combo.value = code;
+          combo.dispatchEvent(new Event('change'));
+          return true;
+        }
+        return false;
+      };
+      if (!trySet()) {
+        // Widget may still be initialising; retry briefly.
+        let tries = 0;
+        const iv = setInterval(() => {
+          if (trySet() || ++tries > 20) clearInterval(iv);
+        }, 200);
+      }
+    }
+
+    // Show the current language label if one is already active.
+    (function initLang() {
+      const code = currentLangCode();
+      const lang = LANGUAGES.find((l) => l.code === code);
+      if (lang) langCurrent.textContent = lang.name;
+      if (code !== 'en') setLanguage(code);
+    })();
+  </script>
+
+  <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

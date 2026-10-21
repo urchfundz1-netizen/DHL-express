@@ -1,0 +1,119 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Login — Express Delivery</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="min-h-screen bg-ink">
+  <div class="grid min-h-screen lg:grid-cols-2">
+    <div class="relative hidden flex-col justify-between overflow-hidden bg-ink p-12 text-white lg:flex">
+      <div class="absolute inset-0 opacity-20" style="background-image:radial-gradient(circle at 30% 30%, #FFCC00 0, transparent 40%), radial-gradient(circle at 80% 70%, #D40511 0, transparent 40%);"></div>
+      <div class="relative">
+        <div class="flex items-center">
+          <span class="brand-logo is-dark" aria-label="Express Delivery">
+  <span class="brand-mark" aria-hidden="true">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#FFCC00"/>
+      <g class="brand-speed" stroke="#D40511" stroke-width="2.2" stroke-linecap="round">
+        <path d="M4 14h5"/><path d="M3 20h6"/><path d="M5 26h4"/>
+      </g>
+      <g fill="none" stroke="#121417" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M15 14l6-3 6 3v10l-6 3-6-3V14Z"/>
+        <path d="M15 14l6 3 6-3M21 17v13"/>
+      </g>
+    </svg>
+  </span>
+  <span class="brand-text">
+    <span class="brand-word">Express <span class="brand-word-2">Delivery</span></span>
+    <span class="brand-route" aria-hidden="true">
+      <span class="brand-route-line"></span>
+      <svg class="brand-van" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 3.5h12v8H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M14 6h5l4 4v1.5h-9V6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="7" cy="12.5" r="1.7" fill="currentColor"/>
+        <circle cx="21" cy="12.5" r="1.7" fill="currentColor"/>
+      </svg>
+    </span>
+  </span>
+</span>
+        </div>
+      </div>
+      <div class="relative">
+        <h2 class="text-3xl font-extrabold uppercase leading-tight text-balance">Manage your delivery operations with confidence.</h2>
+        <p class="mt-4 max-w-md text-white/70">Create shipments, generate tracking numbers, update statuses, manage delays, and monitor performance — all from one secure dashboard.</p>
+        <ul class="mt-8 space-y-3 text-sm text-white/70">
+          <li class="flex items-center gap-3"><span class="grid h-6 w-6 place-items-center rounded-full bg-brand-yellow/20 text-brand-yellow"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span> Real-time shipment statistics</li>
+          <li class="flex items-center gap-3"><span class="grid h-6 w-6 place-items-center rounded-full bg-brand-yellow/20 text-brand-yellow"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span> One-click tracking number copy</li>
+          <li class="flex items-center gap-3"><span class="grid h-6 w-6 place-items-center rounded-full bg-brand-yellow/20 text-brand-yellow"><svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"/></svg></span> Full audit trail of every action</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Login form -->
+    <div class="flex items-center justify-center bg-white p-6 sm:p-12">
+      <div class="w-full max-w-md">
+        <div class="lg:hidden mb-8 flex justify-center">
+          <a href="/" class="flex items-center">
+            <span class="brand-logo" aria-label="Express Delivery">
+  <span class="brand-mark" aria-hidden="true">
+    <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#FFCC00"/>
+      <g class="brand-speed" stroke="#D40511" stroke-width="2.2" stroke-linecap="round">
+        <path d="M4 14h5"/><path d="M3 20h6"/><path d="M5 26h4"/>
+      </g>
+      <g fill="none" stroke="#121417" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+        <path d="M15 14l6-3 6 3v10l-6 3-6-3V14Z"/>
+        <path d="M15 14l6 3 6-3M21 17v13"/>
+      </g>
+    </svg>
+  </span>
+  <span class="brand-text">
+    <span class="brand-word">Express <span class="brand-word-2">Delivery</span></span>
+    <span class="brand-route" aria-hidden="true">
+      <span class="brand-route-line"></span>
+      <svg class="brand-van" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 3.5h12v8H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <path d="M14 6h5l4 4v1.5h-9V6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+        <circle cx="7" cy="12.5" r="1.7" fill="currentColor"/>
+        <circle cx="21" cy="12.5" r="1.7" fill="currentColor"/>
+      </svg>
+    </span>
+  </span>
+</span>
+          </a>
+        </div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-ink">Admin sign in</h1>
+        <p class="mt-1.5 text-sm text-ink/60">Enter your credentials to access the dashboard.</p>
+        <form id="loginForm" class="mt-8 space-y-5" novalidate>
+          <div>
+            <label class="label" for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="username" class="input" placeholder="admin@yourdomain.com" />
+          </div>
+          <div>
+            <label class="label" for="password">Password</label>
+            <div class="relative">
+              <input id="password" name="password" type="password" autocomplete="current-password" class="input pr-12" placeholder="••••••••" />
+              <button type="button" id="togglePw" class="absolute inset-y-0 right-0 grid w-12 place-items-center text-ink/40 hover:text-ink/70" aria-label="Show password">
+                <svg id="eyeOpen" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eyeClosed" class="hidden h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3l18 18M10.6 5.2A9.6 9.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.8M6.2 6.2A17 17 0 0 0 2 12s3.5 7 10 7c1.3 0 2.5-.2 3.5-.6"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="loginError" class="hidden rounded-lg bg-brand-red/10 px-4 py-3 text-sm font-medium text-brand-red" role="alert"></div>
+          <button type="submit" id="loginBtn" class="btn-primary-lg w-full">Sign in</button>
+        </form>
+        <p class="mt-6 text-center text-sm text-ink/50"><a href="/" class="hover:text-ink">&larr; Back to website</a></p>
+      </div>
+    </div>
+  </div>
+  <script src="/js/admin-login.js"></script>
+</body>
+</html>
+

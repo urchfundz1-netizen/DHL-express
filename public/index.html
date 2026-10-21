@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Express Delivery</title>
+  <meta name="description" content="Express Delivery delivers parcels worldwide with real-time shipment tracking. Track your package, explore our shipping services, and ship with confidence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+</head>
+<body class="flex min-h-screen flex-col bg-white">
+  <div data-site-header></div>
+
+  <main class="flex-1">
+    <!-- ===================== HERO + TRACKING ===================== -->
+    <section class="relative overflow-hidden bg-ink text-white">
+      <!-- Diagonal speed-lines (speed-line motif) -->
+      <div class="pointer-events-none absolute inset-0 opacity-[0.13]" style="background-image:repeating-linear-gradient(115deg, #FFCC00 0px, #FFCC00 3px, transparent 3px, transparent 26px);"></div>
+      <!-- Red angular accent -->
+      <div class="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rotate-12 bg-brand-red/30 blur-3xl"></div>
+      <div class="pointer-events-none absolute -left-16 bottom-0 h-72 w-72 -rotate-12 bg-brand-yellow/10 blur-3xl"></div>
+      <!-- Bottom yellow stripe -->
+      <div class="absolute inset-x-0 bottom-0 h-2 bg-gradient-to-r from-brand-yellow via-brand-red to-brand-yellow"></div>
+      <div class="container-x relative grid gap-12 py-16 lg:grid-cols-2 lg:items-center lg:py-24">
+        <div class="animate-fade-in-up">
+          <span class="inline-flex items-center gap-2 rounded-full bg-brand-red px-3 py-1 text-xs font-bold uppercase tracking-wider text-white">
+            <span class="h-1.5 w-1.5 rounded-full bg-brand-yellow"></span> Delivering to 220+ countries
+          </span>
+          <h1 class="mt-5 text-4xl font-extrabold uppercase leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl text-balance">
+            Excellence.<br /><span class="text-brand-yellow">Simply delivered.</span>
+          </h1>
+          <p class="mt-5 max-w-xl text-lg text-white/70">
+            Express Delivery combines speed, security, and transparency. Enter your tracking number to see exactly where your shipment is — right now.
+          </p>
+          <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm font-semibold uppercase tracking-wide text-white/60">
+            <div class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-yellow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg> Fully insured</div>
+            <div class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-yellow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> 24/7 tracking</div>
+            <div class="flex items-center gap-2"><svg class="h-5 w-5 text-brand-yellow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg> Door to door</div>
+          </div>
+          <div class="mt-10 hidden max-w-md sm:block" aria-hidden="true">
+            <div class="flex justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+              <span>Pickup</span><span>In transit</span><span>Delivered</span>
+            </div>
+            <div class="relative mt-3 h-1 rounded-full bg-white/15">
+              <div class="absolute inset-y-0 left-0 w-2/3 rounded-full bg-gradient-to-r from-brand-yellow to-brand-red"></div>
+              <div class="animate-truck-drive absolute -top-[11px] text-brand-yellow">
+                <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h3.5L21 14v2h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="animate-fade-in-up lg:justify-self-end w-full">
+          <div class="card w-full max-w-xl p-6 sm:p-8 text-ink">
+            <h2 class="text-2xl font-extrabold uppercase tracking-tight">Track Your Shipment</h2>
+            <p class="mt-2 text-sm text-ink/60">Enter the tracking number from your shipping confirmation to see live updates and an estimated delivery countdown.</p>
+            <form id="trackForm" class="mt-6" novalidate>
+              <label for="trackingInput" class="label">Tracking number</label>
+              <div class="flex flex-col gap-3 sm:flex-row">
+                <input id="trackingInput" name="tracking" type="text" autocomplete="off" spellcheck="false"
+                  class="input flex-1 text-base font-semibold uppercase tracking-wide sm:text-lg" placeholder="SWN 1234 5678 901 C"
+                  aria-describedby="trackError" />
+                <button type="submit" class="btn-primary-lg shrink-0">
+                  <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                  Track Shipment
+                </button>
+              </div>
+              <p id="trackError" class="field-error hidden" role="alert"></p>
+              <p class="help">Case-insensitive. Spaces and dashes are ignored.</p>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== STATS STRIP ===================== -->
+    <section class="border-b border-ink/10 bg-white">
+      <div class="container-x grid grid-cols-2 gap-6 py-10 sm:grid-cols-4">
+        <div class="reveal text-center"><div class="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-lg bg-brand-yellow/20 text-brand-yellow-700"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18Z"/></svg></div><p class="text-3xl font-extrabold text-ink">220+</p><p class="mt-1 text-sm text-ink/60">Countries served</p></div>
+        <div class="reveal text-center" style="transition-delay:80ms"><div class="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-lg bg-brand-yellow/20 text-brand-yellow-700"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h3.5L21 14v2h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg></div><p class="text-3xl font-extrabold text-ink">99.2%</p><p class="mt-1 text-sm text-ink/60">On-time delivery</p></div>
+        <div class="reveal text-center" style="transition-delay:160ms"><div class="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-lg bg-brand-yellow/20 text-brand-yellow-700"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg></div><p class="text-3xl font-extrabold text-ink">5M+</p><p class="mt-1 text-sm text-ink/60">Parcels / year</p></div>
+        <div class="reveal text-center" style="transition-delay:240ms"><div class="mx-auto mb-2 grid h-10 w-10 place-items-center rounded-lg bg-brand-yellow/20 text-brand-yellow-700"><svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><p class="text-3xl font-extrabold text-ink">24/7</p><p class="mt-1 text-sm text-ink/60">Live support</p></div>
+      </div>
+    </section>
+
+    <!-- ===================== SERVICES ===================== -->
+    <section class="section">
+      <div class="container-x">
+        <div class="max-w-2xl">
+          <p class="h-eyebrow">Our Services</p>
+          <h2 class="h-title">Shipping solutions for every need</h2>
+          <p class="h-sub">From same-day documents to international freight, choose the service that fits your timeline and budget.</p>
+        </div>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3" id="servicesGrid"></div>
+      </div>
+    </section>
+
+    <!-- ===================== HOW IT WORKS ===================== -->
+    <section class="section bg-ink/[0.02]">
+      <div class="container-x">
+        <div class="max-w-2xl">
+          <p class="h-eyebrow">How it works</p>
+          <h2 class="h-title">From pickup to doorstep in four steps</h2>
+        </div>
+        <div class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="card group p-6 transition duration-300 hover:-translate-y-1 hover:shadow-card-lg reveal"><div class="flex items-center justify-between"><div class="grid h-11 w-11 place-items-center rounded-lg bg-brand-yellow text-ink transition duration-300 group-hover:scale-110"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg></div><span class="text-xs font-bold uppercase tracking-widest text-ink/40">Step 1</span></div><h3 class="mt-4 text-lg font-bold">Book &amp; label</h3><p class="mt-2 text-sm text-ink/60">Create a shipment and get an instant, unique tracking number.</p></div>
+          <div class="card group p-6 transition duration-300 hover:-translate-y-1 hover:shadow-card-lg reveal" style="transition-delay:80ms"><div class="flex items-center justify-between"><div class="grid h-11 w-11 place-items-center rounded-lg bg-brand-yellow text-ink transition duration-300 group-hover:scale-110"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h3.5L21 14v2h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg></div><span class="text-xs font-bold uppercase tracking-widest text-ink/40">Step 2</span></div><h3 class="mt-4 text-lg font-bold">We collect</h3><p class="mt-2 text-sm text-ink/60">A courier picks up your parcel from your door or office.</p></div>
+          <div class="card group p-6 transition duration-300 hover:-translate-y-1 hover:shadow-card-lg reveal" style="transition-delay:160ms"><div class="flex items-center justify-between"><div class="grid h-11 w-11 place-items-center rounded-lg bg-brand-yellow text-ink transition duration-300 group-hover:scale-110"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h5a4 4 0 0 0 0-8H8a4 4 0 0 1 0-8h3"/></svg></div><span class="text-xs font-bold uppercase tracking-widest text-ink/40">Step 3</span></div><h3 class="mt-4 text-lg font-bold">Track live</h3><p class="mt-2 text-sm text-ink/60">Follow every checkpoint with a real-time countdown to delivery.</p></div>
+          <div class="card group p-6 transition duration-300 hover:-translate-y-1 hover:shadow-card-lg reveal" style="transition-delay:240ms"><div class="flex items-center justify-between"><div class="grid h-11 w-11 place-items-center rounded-lg bg-brand-yellow text-ink transition duration-300 group-hover:scale-110"><svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg></div><span class="text-xs font-bold uppercase tracking-widest text-ink/40">Step 4</span></div><h3 class="mt-4 text-lg font-bold">Delivered</h3><p class="mt-2 text-sm text-ink/60">Signed for, confirmed, and recorded in your tracking history.</p></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ===================== CTA ===================== -->
+    <section class="section">
+      <div class="container-x">
+        <div class="relative overflow-hidden rounded-xl2 bg-brand-yellow p-8 sm:p-12">
+          <div class="absolute -right-10 -top-10 h-48 w-48 rounded-full bg-brand-red/20 blur-2xl"></div>
+          <div class="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-2xl font-extrabold text-ink sm:text-3xl">Ready to ship with confidence?</h2>
+              <p class="mt-2 max-w-lg text-ink/70">Create an account or talk to our team about business shipping rates and dedicated support.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+              <a href="/contact" class="btn-primary-lg bg-ink hover:bg-ink-700">Get a quote</a>
+              <a href="/services" class="btn btn-lg border-2 border-ink/20 text-ink hover:bg-ink/5">View services</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SUPPORT ===================== -->
+    <section class="section bg-ink/[0.02]">
+      <div class="container-x grid gap-10 lg:grid-cols-3">
+        <div>
+          <p class="h-eyebrow">Customer support</p>
+          <h2 class="h-title">We're here to help, around the clock</h2>
+          <p class="h-sub">Our logistics specialists are available 24/7 to answer questions about your shipment, claims, and delivery options.</p>
+          <a href="/contact" class="btn-outline mt-6">Contact support</a>
+        </div>
+        <div class="lg:col-span-2 grid gap-6 sm:grid-cols-2">
+          <div class="card p-6"><h3 class="font-bold">Live chat</h3><p class="mt-2 text-sm text-ink/60">Chat with an agent any time, from any device.</p></div>
+          <div class="card p-6"><h3 class="font-bold">Email &amp; phone</h3><p class="mt-2 text-sm text-ink/60">+49 228 555-0142</p></div>
+          <div class="card p-6"><h3 class="font-bold">Help center</h3><p class="mt-2 text-sm text-ink/60">Guides on tracking, claims, customs, and more.</p></div>
+          <div class="card p-6"><h3 class="font-bold">Business accounts</h3><p class="mt-2 text-sm text-ink/60">Volume discounts and a dedicated account manager.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-site-footer></div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/home.js"></script>
+</body>
+</html>
+

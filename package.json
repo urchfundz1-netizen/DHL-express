@@ -1,0 +1,48 @@
+{
+  "name": "swiftnova-express",
+  "version": "1.0.0",
+  "description": "SwiftNova Global Express — a professional, fully functional delivery & shipment tracking platform backed by Firebase Firestore.",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/css/styles.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./public/css/styles.css --watch",
+    "seed": "node server/seed.js",
+    "seed:firestore": "node server/seed.js",
+    "migrate:firestore": "node scripts/migrate-to-firestore.js",
+    "indexes:create": "node scripts/create-indexes.js",
+    "start": "node server/index.js",
+    "dev": "concurrently -n CSS,SERVER -c cyan,magenta \"npm:watch:css\" \"npm:dev:server\"",
+    "dev:server": "node --watch server/index.js"
+  },
+  "keywords": [
+    "logistics",
+    "shipment-tracking",
+    "delivery",
+    "express",
+    "firebase",
+    "firestore"
+  ],
+  "author": "SwiftNova Global Express",
+  "license": "MIT",
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.9",
+    "bcryptjs": "^2.4.3",
+    "concurrently": "^8.2.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "express-session": "^1.18.1",
+    "firebase-admin": "^14.5.0",
+    "helmet": "^8.0.0",
+    "multer": "^2.4.0",
+    "nodemailer": "^6.9.14"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.34.0",
+    "tailwindcss": "^3.4.17"
+  },
+  "engines": {
+    "node": ">=18.17"
+  }
+}

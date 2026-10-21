@@ -1,0 +1,500 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shipment Notification — Express Delivery</title>
+  <meta name="description" content="Detailed shipment notification: waybill, delivery address, estimated delivery and options." />
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #eeeeee;
+      color: #171717;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .email-container {
+      width: 100%;
+      max-width: 730px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #dddddd;
+    }
+
+    .top-banner {
+      height: 28px;
+      background: linear-gradient(to bottom, #f8dc54, #fff7cf);
+    }
+
+    .email-content { padding: 8px 34px 30px; }
+
+    @keyframes details-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .email-content { animation: details-rise .5s ease-out both; }
+    .shipment-table tbody tr, #eventsBody tr, #commentsBody tr { animation: details-rise .45s ease-out both; }
+    @media (prefers-reduced-motion: reduce) { .email-content, .shipment-table tbody tr, #eventsBody tr, #commentsBody tr { animation: none; } }
+
+    h1 {
+      color: #b33b3b;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 24px;
+    }
+
+    .greeting { font-size: 17px; margin-bottom: 22px; }
+
+    p { margin-bottom: 17px; }
+
+    a { color: #477da7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    h2 { color: #b33b3b; font-size: 16px; margin: 24px 0 0; }
+
+    .shipment-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #f3f3f3;
+      margin-bottom: 47px;
+    }
+
+    .shipment-table td { padding: 6px; vertical-align: top; }
+
+    .shipment-table td:first-child { width: 30%; font-weight: bold; }
+
+    .shipment-table th {
+      padding: 6px;
+      text-align: left;
+      font-weight: bold;
+      border-bottom: 1px solid #cccccc;
+      color: #b33b3b;
+    }
+
+    #eventsBody td:first-child,
+    #commentsBody td:first-child { width: auto; font-weight: normal; }
+
+    .waybill { color: #777777; overflow-wrap: anywhere; }
+
+    .thank-you { font-style: italic; margin-bottom: 17px; }
+
+    .brand-tagline { color: #a63b3b; font-size: 14px; font-weight: bold; margin-bottom: 25px; }
+
+    .footer { padding: 0 34px 25px; background: #ffdc43; }
+
+    .footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 8px;
+    }
+
+    .company-name { font-size: 16px; font-weight: bold; }
+
+    .footer-links { text-align: right; color: #477da7; line-height: 2; }
+
+    .copyright { text-align: right; font-size: 13px; }
+
+    .language-bar {
+      border-top: 1px solid #cccccc;
+      padding: 17px 3px;
+      color: #477da7;
+    }
+
+    .language-bar a { color: #477da7; }
+
+    .bottom-banner {
+      min-height: 215px;
+      background: linear-gradient(to bottom, #ffdc43, #ffe878);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 30px 15px;
+    }
+
+    .logo {
+      font-weight: 900;
+      font-style: italic;
+      color: #d40511;
+      font-size: clamp(42px, 9vw, 66px);
+      line-height: 1;
+      letter-spacing: -3px;
+    }
+
+    .logo-lines { display: block; font-size: 24px; letter-spacing: 1px; line-height: 0.6; }
+
+    .on-demand {
+      font-size: clamp(25px, 5vw, 38px);
+      color: #111111;
+      font-weight: 400;
+      letter-spacing: -1px;
+      margin-top: 8px;
+    }
+
+    .on-demand span { color: #d40511; }
+
+    .delivery-text { color: #a33b3b; letter-spacing: 7px; font-size: 13px; margin-top: 2px; }
+
+    .banner-logo {
+      display: block;
+      margin: 0 auto 10px;
+      width: clamp(160px, 32vw, 260px);
+      height: auto;
+      object-fit: contain;
+    }
+
+    .brand-logo { display: inline-flex; align-items: center; gap: 10px; line-height: 1; }
+    .brand-mark {
+      width: 46px; height: 46px; display: inline-block;
+      filter: drop-shadow(0 6px 12px rgba(179, 59, 59, 0.2));
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .brand-mark svg { display: block; width: 100%; height: 100%; }
+    .brand-logo:hover .brand-mark { transform: translateY(-2px) rotate(-4deg) scale(1.04); }
+    .brand-text { display: inline-flex; flex-direction: column; }
+    .brand-word {
+      display: block; font-weight: 800; font-size: 21px; letter-spacing: -0.03em; color: #121417;
+      animation: brand-word-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    }
+    .brand-word-2 {
+      color: #b33b3b;
+      background-image: linear-gradient(100deg, #b33b3b 0%, #b33b3b 35%, #e0772f 50%, #b33b3b 65%, #b33b3b 100%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: brand-sheen 5s linear infinite;
+    }
+    .brand-route { position: relative; display: block; height: 10px; margin-top: 4px; }
+    .brand-route-line {
+      position: absolute; left: 0; right: 0; top: 50%;
+      border-top: 2px dashed rgba(18, 20, 23, 0.18);
+      transition: border-color 0.3s ease;
+    }
+    .brand-van {
+      position: absolute; top: 50%; left: 0; width: 20px; height: 11px;
+      transform: translateY(-50%); color: #b33b3b; opacity: 0;
+      animation: brand-deliver 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    }
+    .brand-logo:hover .brand-route-line { border-top-color: rgba(179, 59, 59, 0.45); }
+    .brand-logo:hover .brand-van { animation-duration: 2.6s; }
+    @keyframes brand-word-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes brand-sheen {
+      0% { background-position: 180% 0; }
+      100% { background-position: -80% 0; }
+    }
+    @keyframes brand-deliver {
+      0% { left: -12px; opacity: 0; }
+      10% { opacity: 1; }
+      78% { left: calc(100% - 20px); opacity: 1; }
+      90%, 100% { left: calc(100% - 20px); opacity: 0; }
+    }
+    .brand-speed path {
+      transform-box: fill-box;
+      animation: brand-speed 1.8s ease-in-out infinite;
+    }
+    .brand-speed path:nth-child(2) { animation-delay: 0.18s; }
+    .brand-speed path:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes brand-speed {
+      0%, 100% { opacity: 0.4; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(2.5px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brand-speed path { animation: none; }
+      .brand-word,
+      .brand-word-2,
+      .brand-van { animation: none; }
+      .brand-logo:hover .brand-mark { transform: none; }
+    }
+
+    /* Page-specific helpers */
+    .details-back {
+      display: inline-block;
+      margin-bottom: 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #477da7;
+      text-decoration: none;
+    }
+    .details-back:hover { text-decoration: underline; }
+
+    .details-loading,
+    .details-error {
+      padding: 40px 15px;
+      text-align: center;
+      color: #555555;
+    }
+    .details-error { color: #b33b3b; }
+
+    /* Tablet and mobile screens */
+    @media (max-width: 600px) {
+      body { font-size: 13px; }
+      .email-content { padding: 12px 18px 25px; }
+      h1 { font-size: 19px; margin-bottom: 20px; }
+      .greeting { font-size: 15px; }
+      .shipment-table td { padding: 8px 5px; }
+      .shipment-table td:first-child { width: 43%; }
+      .footer { padding: 0 18px 22px; }
+      .footer-top { flex-direction: column; align-items: flex-start; }
+      .footer-links { text-align: left; }
+      .copyright { text-align: left; margin-top: 12px; }
+      .bottom-banner { min-height: 175px; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="email-container">
+    <div class="top-banner"></div>
+
+    <!-- Loading -->
+    <div id="loading" class="details-loading">Loading shipment details…</div>
+
+    <!-- Error -->
+    <div id="error" class="details-error" hidden>
+      <p id="errorMessage">Shipment details could not be found.</p>
+      <p><a href="/tracking">&larr; Back to tracking</a></p>
+    </div>
+
+    <!-- Content (filled by /js/tracking-details.js) -->
+    <div id="content" hidden>
+      <section class="email-content">
+        <a class="details-back" href="/tracking">&larr; Back to tracking</a>
+
+        <h1 id="headline">YOUR SHIPMENT IS ON ITS WAY</h1>
+
+        <p class="greeting">
+          Hello <span id="customerName">Customer</span>,
+        </p>
+
+        <p>
+          Your shipment with waybill number
+          <strong id="waybill">—</strong>
+          from <strong id="sender">Express Delivery</strong>
+          is on its way. A signature may be required at the time
+          of delivery.
+        </p>
+
+        <p>
+          The current estimated delivery is
+          <span id="deliveryDateText">to be confirmed</span>
+          by End of Day.
+        </p>
+
+        <h2 id="delivery-information"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M3 7h11v9H3z"/><path d="M14 10h3.5L21 14v2h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>DELIVERY INFORMATION</h2>
+
+        <table class="shipment-table">
+          <tbody>
+            <tr>
+              <td>Waybill No.</td>
+              <td class="waybill" id="tableWaybill">—</td>
+            </tr>
+            <tr>
+              <td>Status</td>
+              <td id="tableStatus">—</td>
+            </tr>
+            <tr>
+              <td>Delivery Address</td>
+              <td id="deliveryAddress">—</td>
+            </tr>
+            <tr>
+              <td>Estimated Delivery Date</td>
+              <td id="tableDate">—</td>
+            </tr>
+            <tr>
+              <td>Delivery Time</td>
+              <td id="tableTime">By End of Day</td>
+            </tr>
+            <tr>
+              <td>Delivery Instructions</td>
+              <td id="tableInstructions">—</td>
+            </tr>
+            <tr>
+              <td>Delivered On</td>
+              <td id="tableDeliveredAt">—</td>
+            </tr>
+            <tr>
+              <td>Last Updated</td>
+              <td id="tableUpdatedAt">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/></svg>PACKAGE DETAILS</h2>
+
+        <table class="shipment-table">
+          <tbody>
+            <tr>
+              <td>Contents</td>
+              <td id="tableDescription">—</td>
+            </tr>
+            <tr>
+              <td>Category</td>
+              <td id="tableCategory">—</td>
+            </tr>
+            <tr>
+              <td>Weight</td>
+              <td id="tableWeight">—</td>
+            </tr>
+            <tr>
+              <td>Dimensions</td>
+              <td id="tableDimensions">—</td>
+            </tr>
+            <tr>
+              <td>Service</td>
+              <td id="tableService">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>SENDER &amp; RECIPIENT</h2>
+
+        <table class="shipment-table">
+          <tbody>
+            <tr>
+              <td>Sender</td>
+              <td id="tableSender">—</td>
+            </tr>
+            <tr>
+              <td>Sender Contact</td>
+              <td id="tableSenderContact">—</td>
+            </tr>
+            <tr>
+              <td>Origin</td>
+              <td id="tableOrigin">—</td>
+            </tr>
+            <tr>
+              <td>Recipient</td>
+              <td id="tableRecipient">—</td>
+            </tr>
+            <tr>
+              <td>Recipient Contact</td>
+              <td id="tableRecipientContact">—</td>
+            </tr>
+            <tr>
+              <td>Destination</td>
+              <td id="tableDestination">—</td>
+            </tr>
+            <tr>
+              <td>Date Shipped</td>
+              <td id="tableCreatedAt">—</td>
+            </tr>
+            <tr>
+              <td>Pickup Date</td>
+              <td id="tablePickup">—</td>
+            </tr>
+            <tr>
+              <td>Dispatch Date</td>
+              <td id="tableDispatch">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h5a4 4 0 0 0 0-8H8a4 4 0 0 1 0-8h3"/></svg>TRACKING HISTORY</h2>
+
+        <table class="shipment-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Location</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="eventsBody">
+            <tr>
+              <td colspan="4">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>UPDATES &amp; NOTES</h2>
+
+        <table class="shipment-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Update</th>
+            </tr>
+          </thead>
+          <tbody id="commentsBody">
+            <tr>
+              <td colspan="2">—</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <p class="brand-tagline">
+          Shipment Notification — Express Delivery
+        </p>
+      </section>
+
+      <footer class="footer">
+        <div class="footer-top">
+          <div class="company-name">Shipment Services</div>
+        </div>
+      </footer>
+
+      <section class="bottom-banner">
+        <div>
+          <span class="brand-logo" aria-label="Express Delivery">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+              <rect width="40" height="40" rx="10" fill="#FFCC00"/>
+              <g class="brand-speed" stroke="#D40511" stroke-width="2.2" stroke-linecap="round">
+                <path d="M4 14h5"/><path d="M3 20h6"/><path d="M5 26h4"/>
+              </g>
+              <g fill="none" stroke="#121417" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round">
+                <path d="M15 14l6-3 6 3v10l-6 3-6-3V14Z"/>
+                <path d="M15 14l6 3 6-3M21 17v13"/>
+              </g>
+            </svg>
+          </span>
+          <span class="brand-text">
+            <span class="brand-word">Express <span class="brand-word-2">Delivery</span></span>
+            <span class="brand-route" aria-hidden="true">
+              <span class="brand-route-line"></span>
+              <svg class="brand-van" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M2 3.5h12v8H2z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <path d="M14 6h5l4 4v1.5h-9V6Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+                <circle cx="7" cy="12.5" r="1.7" fill="currentColor"/>
+                <circle cx="21" cy="12.5" r="1.7" fill="currentColor"/>
+              </svg>
+            </span>
+          </span>
+        </span>
+          <div class="on-demand"><span>ON</span> DEMAND</div>
+          <div class="delivery-text">DELIVERY</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/js/tracking-details.js"></script>
+  <script>
+    (function () {
+      var m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
+      if (!m) return;
+      var parts = decodeURIComponent(m[1]).split('/');
+      if (!parts[2] || parts[2] === 'en') return;
+      var host = document.createElement('div');
+      host.id = 'google_translate_element';
+      host.style.cssText = 'position:absolute;left:-9999px;height:0;overflow:hidden;';
+      document.body.appendChild(host);
+      window.googleTranslateElementInit = function () {
+        new google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element');
+      };
+      var s = document.createElement('script');
+      s.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      s.async = true;
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Firebase security rules for the site.
+//
+// The web app and the Express server never talk to Firestore directly from
+// the browser — every read and write goes through the server using the
+// Admin SDK, which bypasses these rules. So client access is denied by
+// default and nothing is exposed publicly, even if someone extracts the
+// web config from the page.
+//
+// If you later add the Firebase client SDK (for example live tracking), open
+// exactly one collection, like this:
+//
+//   allow read: if true;
+//
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

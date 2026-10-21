@@ -1,0 +1,376 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Base ---------- */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply font-sans text-ink bg-white antialiased;
+  }
+  /* Google Translate injects a top banner and offsets the body; keep the page flush. */
+  .goog-te-banner-frame.skiptranslate {
+    display: none !important;
+  }
+  body {
+    top: 0 !important;
+  }
+  /* Prevent any element from forcing horizontal overflow on small screens */
+  img,
+  svg,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+  ::selection {
+    background: #ffcc00;
+    color: #121417;
+  }
+}
+
+/* ---------- Components ---------- */
+@layer components {
+  .container-x {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-semibold
+      transition-all duration-200 focus:outline-none focus-visible:ring-4
+      focus-visible:ring-brand-yellow/40 disabled:opacity-60 disabled:cursor-not-allowed
+      select-none whitespace-nowrap;
+  }
+  .btn-md {
+    @apply px-5 py-2.5 text-sm;
+  }
+  .btn-lg {
+    @apply px-7 py-3.5 text-base;
+  }
+  .btn-primary {
+    @apply btn btn-md bg-brand-red text-white hover:bg-brand-red-600 active:scale-[.98]
+      shadow-sm hover:shadow-md;
+  }
+  .btn-primary-lg {
+    @apply btn btn-lg bg-brand-red text-white hover:bg-brand-red-600 active:scale-[.98]
+      shadow-sm hover:shadow-md;
+  }
+  .btn-yellow {
+    @apply btn btn-md bg-brand-yellow text-ink hover:bg-brand-yellow-600 active:scale-[.98];
+  }
+  .btn-yellow-lg {
+    @apply btn btn-lg bg-brand-yellow text-ink hover:bg-brand-yellow-600 active:scale-[.98];
+  }
+  .btn-outline {
+    @apply btn btn-md border-2 border-ink/15 text-ink hover:border-ink/40 hover:bg-ink/5;
+  }
+  .btn-ghost {
+    @apply btn btn-md text-ink/80 hover:bg-ink/5;
+  }
+  .btn-danger {
+    @apply btn btn-md bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .input {
+    @apply block w-full rounded-lg border border-ink/15 bg-white px-4 py-3 text-ink
+      placeholder-ink/40 shadow-sm transition
+      focus:border-brand-yellow focus:ring-4 focus:ring-brand-yellow/30 focus:outline-none;
+  }
+  .input-sm {
+    @apply py-2 text-sm;
+  }
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-ink/80;
+  }
+  .help {
+    @apply mt-1 text-xs text-ink/50;
+  }
+  .field-error {
+    @apply mt-1 text-xs font-medium text-brand-red;
+  }
+
+  .card {
+    @apply rounded-xl2 border border-ink/10 bg-white shadow-card;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+
+  .section {
+    @apply py-14 sm:py-20;
+  }
+  .h-eyebrow {
+    @apply mb-2 text-sm font-bold uppercase tracking-widest text-brand-red;
+  }
+  .h-title {
+    @apply text-3xl font-extrabold tracking-tight text-ink sm:text-4xl;
+  }
+  .h-sub {
+    @apply mt-3 max-w-2xl text-base text-ink/60 sm:text-lg;
+  }
+
+  /* ---------- Brand logo ---------- */
+  .brand-logo {
+    @apply inline-flex items-center gap-2.5 leading-none;
+  }
+  .brand-logo .brand-mark {
+    width: 2.4rem;
+    height: 2.4rem;
+    flex: none;
+    filter: drop-shadow(0 6px 12px rgba(212, 5, 17, 0.18));
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .brand-logo .brand-mark svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .brand-logo:hover .brand-mark {
+    transform: translateY(-2px) rotate(-4deg) scale(1.04);
+  }
+  .brand-text {
+    display: inline-flex;
+    flex-direction: column;
+  }
+  .brand-word {
+    display: block;
+    font-weight: 800;
+    font-size: 1.15rem;
+    letter-spacing: -0.03em;
+    white-space: nowrap;
+    animation: brand-word-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+  .brand-word-2 {
+    background-image: linear-gradient(100deg, #d40511 0%, #d40511 35%, #ff8a00 50%, #d40511 65%, #d40511 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: #d40511;
+    animation: brand-sheen 5s linear infinite;
+  }
+  .brand-route {
+    position: relative;
+    display: block;
+    height: 0.75rem;
+    margin-top: 0.28rem;
+  }
+  .brand-route-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    border-top: 2px dashed rgba(18, 20, 23, 0.18);
+    transition: border-color 0.3s ease;
+  }
+  .brand-van {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 1.15rem;
+    height: 0.65rem;
+    transform: translateY(-50%);
+    color: #d40511;
+    opacity: 0;
+    animation: brand-deliver 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  }
+  /* Plane flying the same route, slightly above the line so it reads as
+     airborne. Starts a beat after the van so the two never overlap. */
+  .brand-plane {
+    position: absolute;
+    top: 52%;
+    left: 0;
+    width: 1.3rem;
+    height: 0.65rem;
+    transform: translateY(-50%);
+    color: #d40511;
+    opacity: 0;
+    animation: brand-fly 7s cubic-bezier(0.45, 0, 0.55, 1) 0.7s infinite;
+  }
+  .brand-plane-icon {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  /* Contrail trailing behind the plane; grows out of the fuselage and
+     fades away as the plane leaves the route. */
+  .brand-plane-trail {
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    width: 3.2rem;
+    height: 2px;
+    transform: translateY(-50%) scaleX(0);
+    transform-origin: right center;
+    background: linear-gradient(to left, currentColor, transparent);
+    opacity: 0;
+    animation: brand-trail 7s cubic-bezier(0.45, 0, 0.55, 1) 0.7s infinite;
+  }
+  .brand-logo:hover .brand-route-line {
+    border-top-color: rgba(212, 5, 17, 0.45);
+  }
+  .brand-logo:hover .brand-van {
+    animation-duration: 2.6s;
+  }
+  .brand-logo:hover .brand-plane {
+    animation-duration: 3.1s;
+  }
+  .brand-logo:hover .brand-plane-trail {
+    animation-duration: 3.1s;
+  }
+  .brand-logo.is-dark .brand-word {
+    color: #fff;
+  }
+  .brand-logo.is-dark .brand-word-2 {
+    background-image: linear-gradient(100deg, #ffcc00 0%, #ffcc00 35%, #fff5b8 50%, #ffcc00 65%, #ffcc00 100%);
+    color: #ffcc00;
+  }
+  .brand-logo.is-dark .brand-route-line {
+    border-top-color: rgba(255, 255, 255, 0.25);
+  }
+  .brand-logo.is-dark .brand-van {
+    color: #ffcc00;
+  }
+  .brand-logo.is-dark .brand-plane {
+    color: #ffcc00;
+  }
+  .brand-logo-lg .brand-mark {
+    width: 3rem;
+    height: 3rem;
+  }
+  .brand-logo-lg .brand-word {
+    font-size: 1.5rem;
+  }
+  .brand-logo-lg .brand-route {
+    height: 0.85rem;
+  }
+  .brand-logo-lg .brand-van {
+    width: 1.4rem;
+    height: 0.8rem;
+  }
+  .brand-logo-lg .brand-plane {
+    width: 1.55rem;
+    height: 0.78rem;
+  }
+  .brand-logo-lg .brand-plane-trail {
+    width: 3.8rem;
+  }
+  .brand-speed path {
+    transform-box: fill-box;
+    animation: brand-speed 1.8s ease-in-out infinite;
+  }
+  .brand-speed path:nth-child(2) { animation-delay: 0.18s; }
+  .brand-speed path:nth-child(3) { animation-delay: 0.36s; }
+}
+
+@keyframes brand-speed {
+  0%, 100% { opacity: 0.4; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(2.5px); }
+}
+
+@keyframes brand-word-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes brand-sheen {
+  0% { background-position: 180% 0; }
+  100% { background-position: -80% 0; }
+}
+
+@keyframes brand-deliver {
+  0% { left: -12px; opacity: 0; }
+  10% { opacity: 1; }
+  78% { left: calc(100% - 1.15rem); opacity: 1; }
+  90%, 100% { left: calc(100% - 1.15rem); opacity: 0; }
+}
+
+/* Plane flight path: climbs in from the left with a soft takeoff fade,
+   bobs while cruising the route line, banks slightly, then fades out as it
+   lifts away at the right edge. */
+@keyframes brand-fly {
+  0% { left: -1.5rem; opacity: 0; transform: translateY(-50%) scale(0.72) rotate(-14deg); }
+  5% { opacity: 0.2; }
+  9% { opacity: 0.65; }
+  16% { opacity: 1; transform: translateY(-50%) scale(1) rotate(-8deg); }
+  30% { transform: translateY(-50%) translateY(-1.5px) scale(1) rotate(-5deg); }
+  50% { transform: translateY(-50%) translateY(-2.5px) scale(1) rotate(0deg); }
+  70% { transform: translateY(-50%) translateY(-1.5px) scale(1) rotate(5deg); }
+  86% { left: calc(100% - 1.4rem); opacity: 1; transform: translateY(-50%) scale(1) rotate(9deg); }
+  93% { opacity: 0.6; transform: translateY(-50%) scale(0.96) rotate(13deg); }
+  100% { left: calc(100% - 1.7rem); opacity: 0; transform: translateY(-50%) scale(0.82) rotate(18deg); }
+}
+
+/* Contrail: unfurls behind the plane, holds while cruising, dissolves as
+   the plane climbs out of the route. */
+@keyframes brand-trail {
+  0% { opacity: 0; transform: translateY(-50%) scaleX(0); }
+  8% { opacity: 0.25; }
+  18% { opacity: 0.55; transform: translateY(-50%) scaleX(1); }
+  82% { opacity: 0.5; transform: translateY(-50%) scaleX(1); }
+  95%, 100% { opacity: 0; transform: translateY(-50%) scaleX(0.85); }
+}
+
+/* ---------- Utilities ---------- */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ---------- Motion ---------- */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .animate-fade-in-up,
+  .animate-fade-in,
+  .animate-pulse-ring,
+  .animate-float,
+  .animate-truck-drive,
+  .brand-speed path,
+  .brand-word-2,
+  .brand-van,
+  .brand-plane,
+  .brand-plane-trail,
+  .brand-word {
+    animation: none !important;
+  }
+  .brand-word {
+    opacity: 1;
+  }
+  .brand-plane,
+  .brand-plane-trail {
+    opacity: 0;
+  }
+  .brand-logo .brand-mark {
+    transition: none;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
