@@ -9,6 +9,30 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    /* Hide every piece of UI Google Translate injects */
+    #google_translate_element {
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
+      width: 1px !important;
+      height: 1px !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    .skiptranslate,
+    .goog-te-banner-frame,
+    .goog-te-balloon-frame,
+    .goog-te-menu-frame,
+    #goog-gt-tt {
+      display: none !important;
+      visibility: hidden !important;
+    }
+    html { margin-top: 0 !important; }
+    body { top: 0 !important; }
+    .goog-text-highlight { background: none !important; box-shadow: none !important; }
+
     body {
       font-family: Arial, Helvetica, sans-serif;
       background: #eeeeee;
@@ -101,9 +125,22 @@
       border-top: 1px solid #cccccc;
       padding: 17px 3px;
       color: #477da7;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
     }
 
     .language-bar a { color: #477da7; }
+    .language-bar select {
+      border: 1px solid #b9c9d9;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #171717;
+      font-size: 13px;
+      padding: 5px 8px;
+      max-width: 180px;
+    }
 
     .bottom-banner {
       min-height: 215px;
@@ -439,6 +476,10 @@
         <div class="footer-top">
           <div class="company-name">Shipment Services</div>
         </div>
+        <div class="language-bar">
+          <label for="detailsLanguage">Language</label>
+          <select id="detailsLanguage" data-language-select aria-label="Language"></select>
+        </div>
       </footer>
 
       <section class="bottom-banner">
@@ -476,6 +517,7 @@
     </div>
   </main>
 
+  <script src="/js/shared.js"></script>
   <script src="/js/tracking-details.js"></script>
   <script src="/js/translate-page.js"></script>
 </body>

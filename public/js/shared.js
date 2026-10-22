@@ -216,11 +216,46 @@ const SITE_LANGUAGES = [
   { name: 'Xhosa', code: 'xh' },
 ];
 
-function currentLanguageCode() {
+const LANGUAGE_STORAGE_KEY = 'swiftnova.language';
+
+function storedLanguageCode() {
+  try {
+    return localStorage.getItem(LANGUAGE_STORAGE_KEY) || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+function cookieLanguageCode() {
   const m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
-  if (!m) return 'en';
-  const parts = decodeURIComponent(m[1]).split('/');
-  return parts[2] || 'en';
+  if (!m) return '';
+  try {
+    const parts = decodeURIComponent(m[1]).split('/');
+    return parts[2] || '';
+  } catch (e) {
+    return '';
+  }
+}
+
+// localStorage is the source of truth: Google may rewrite or clear its own
+// cookie, but the selected language must survive refreshes and page changes.
+function currentLanguageCode() {
+  return storedLanguageCode() || cookieLanguageCode() || 'en';
+}
+
+function persistLanguage(code) {
+  const value = code === 'en' ? '/en/en' : `/en/${code}`;
+  try {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, code);
+  } catch (e) { /* private mode / storage disabled */ }
+  document.cookie = `googtrans=${value};path=/;max-age=31536000;SameSite=Lax`;
+}
+
+function syncLanguageCookie() {
+  const code = storedLanguageCode();
+  if (!code) return;
+  const value = code === 'en' ? '/en/en' : `/en/${code}`;
+  document.cookie = `googtrans=${value};path=/;max-age=31536000;SameSite=Lax`;
 }
 
 function languageOptions(selected) {
@@ -237,20 +272,31 @@ function languageSelect(id, extraClass = '') {
 }
 
 function setSiteLanguage(code) {
-  const value = code === 'en' ? '/en/en' : `/en/${code}`;
-  document.cookie = `googtrans=${value};path=/`;
+  persistLanguage(code);
   window.location.reload();
 }
 
+let googleTranslateLoading = false;
 function loadGoogleTranslate() {
-  if (document.getElementById('google_translate_element')) return;
-  const host = document.createElement('div');
-  host.id = 'google_translate_element';
-  host.style.cssText = 'position:absolute;left:-9999px;height:0;overflow:hidden;';
-  document.body.appendChild(host);
+  syncLanguageCookie();
+  if (window.google && window.google.translate) return;
+  if (googleTranslateLoading) return;
+  if (document.querySelector('script[data-google-translate]')) return;
+  googleTranslateLoading = true;
+
+  // The widget renders its own toolbar; keep it off-screen and hidden by CSS.
+  let host = document.getElementById('google_translate_element');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'google_translate_element';
+    host.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(host);
+  }
+
   window.googleTranslateElementInit = function init() {
     new google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element');
     const code = currentLanguageCode();
+    if (!code || code === 'en') return;
     let tries = 0;
     const timer = setInterval(() => {
       const combo = document.querySelector('select.goog-te-combo');
@@ -258,7 +304,7 @@ function loadGoogleTranslate() {
         combo.value = code;
         combo.dispatchEvent(new Event('change'));
         clearInterval(timer);
-      } else if (++tries > 20) {
+      } else if (++tries > 50) {
         clearInterval(timer);
       }
     }, 200);
@@ -266,15 +312,21 @@ function loadGoogleTranslate() {
   const script = document.createElement('script');
   script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
   script.async = true;
+  script.dataset.googleTranslate = 'true';
   document.body.appendChild(script);
 }
 
 function initLanguageControls() {
+  // The admin area stays in English: no selector, no Google Translate.
+  if (document.body && document.body.dataset && document.body.dataset.noTranslate !== undefined) return;
+  syncLanguageCookie();
+  const current = currentLanguageCode();
   document.querySelectorAll('[data-language-select]').forEach((sel) => {
-    sel.value = currentLanguageCode();
+    if (!sel.options.length) sel.innerHTML = languageOptions(current);
+    sel.value = current;
     sel.addEventListener('change', () => setSiteLanguage(sel.value));
   });
-  if (currentLanguageCode() !== 'en') loadGoogleTranslate();
+  if (current !== 'en') loadGoogleTranslate();
 }
 
 // ---- Logo ------------------------------------------------------------------

@@ -84,7 +84,13 @@ app.use(
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", 'https://translate.google.com', 'https://translate.googleapis.com'],
+            scriptSrc: [
+              "'self'",
+              'https://translate.google.com',
+              'https://translate.googleapis.com',
+              'https://translate-pa.googleapis.com',
+              'https://www.gstatic.com',
+            ],
             styleSrc: [
               "'self'",
               "'unsafe-inline'",
@@ -94,9 +100,14 @@ app.use(
               'https://www.gstatic.com',
             ],
             imgSrc: ["'self'", 'data:', 'https:'],
-            fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
-            connectSrc: ["'self'", 'https://translate.googleapis.com', 'https://translate.google.com'],
-            frameSrc: ['https://translate.google.com'],
+            fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com', 'https://www.gstatic.com'],
+            connectSrc: [
+              "'self'",
+              'https://translate.googleapis.com',
+              'https://translate.google.com',
+              'https://translate-pa.googleapis.com',
+            ],
+            frameSrc: ['https://translate.google.com', 'https://www.gstatic.com'],
           },
         }
       : false,

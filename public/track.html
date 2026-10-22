@@ -215,10 +215,27 @@
     }
     .lang-list .lang-empty:hover { background: transparent; }
 
-    /* Hide the Google Translate top banner that gets injected */
+    /* Hide every piece of UI Google Translate injects */
+    #google_translate_element {
+      position: absolute !important;
+      left: -9999px !important;
+      top: -9999px !important;
+      width: 1px !important;
+      height: 1px !important;
+      overflow: hidden !important;
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
     .skiptranslate,
     .goog-te-banner-frame,
-    #goog-gt-tt { display: none !important; }
+    .goog-te-balloon-frame,
+    .goog-te-menu-frame,
+    #goog-gt-tt {
+      display: none !important;
+      visibility: hidden !important;
+    }
+    html { margin-top: 0 !important; }
     body { top: 0 !important; }
     .goog-text-highlight { background: none !important; box-shadow: none !important; }
 

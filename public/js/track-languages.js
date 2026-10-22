@@ -102,14 +102,27 @@
     const langList = document.getElementById('langList');
     const langCurrent = document.getElementById('langCurrent');
 
-    // Restore a previously chosen language (Google stores it in a cookie).
-    function currentLangCode() {
+    // Restore a previously chosen language. localStorage is the source of
+    // truth (Google may rewrite or clear its own cookie between visits).
+    const LANG_STORAGE_KEY = 'swiftnova.language';
+    function storedLangCode() {
+      try { return localStorage.getItem(LANG_STORAGE_KEY) || ''; } catch (e) { return ''; }
+    }
+    function cookieLangCode() {
       const m = document.cookie.match(/(?:^|;\s*)googtrans=([^;]+)/);
-      if (m) {
-        const parts = decodeURIComponent(m[1]).split('/');
-        return parts[2] || 'en';
-      }
-      return 'en';
+      if (!m) return '';
+      try { return decodeURIComponent(m[1]).split('/')[2] || ''; } catch (e) { return ''; }
+    }
+    function currentLangCode() {
+      return storedLangCode() || cookieLangCode() || 'en';
+    }
+    function persistLang(code) {
+      try { localStorage.setItem(LANG_STORAGE_KEY, code); } catch (e) {}
+      document.cookie = 'googtrans=' + (code === 'en' ? '/en/en' : '/en/' + code) + ';path=/;max-age=31536000;SameSite=Lax';
+    }
+    function syncLangCookie() {
+      const code = storedLangCode();
+      if (code) document.cookie = 'googtrans=' + (code === 'en' ? '/en/en' : '/en/' + code) + ';path=/;max-age=31536000;SameSite=Lax';
     }
 
     function renderLangList(filter) {
@@ -163,32 +176,32 @@
     });
 
     // ---- Google Translate integration ---------------------------------------
-    function googleTranslateElementInit() {
-      new google.translate.TranslateElement(
-        { pageLanguage: 'en', autoDisplay: false },
-        'google_translate_element'
-      );
-    }
-
-    // The widget is a few hundred KB, so it is only fetched when a non-English
-    // language is actually selected (or was already chosen on a previous visit).
-    let translateLoading = false;
-    function loadGoogleTranslate() {
+    // shared.js owns the widget loader (one implementation for every page).
+    // The fallback below only runs if shared.js is missing.
+    function ensureGoogleTranslate() {
+      if (typeof window.loadGoogleTranslate === 'function') {
+        window.loadGoogleTranslate();
+        return;
+      }
       if ((window.google && window.google.translate) || document.getElementById('google-translate-script')) return;
-      if (translateLoading) return;
-      translateLoading = true;
-      const script = document.createElement('script');
-      script.id = 'google-translate-script';
-      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      script.async = true;
-      document.body.appendChild(script);
+      window.googleTranslateElementInit = function () {
+        new google.translate.TranslateElement(
+          { pageLanguage: 'en', autoDisplay: false },
+          'google_translate_element'
+        );
+      };
+      var s = document.createElement('script');
+      s.id = 'google-translate-script';
+      s.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      s.async = true;
+      document.body.appendChild(s);
     }
 
     // Drive the hidden Google <select> that the widget injects.
     function setLanguage(code) {
       // Persist across every page (Google reads this cookie on init).
-      document.cookie = 'googtrans=' + (code === 'en' ? '/en/en' : '/en/' + code) + ';path=/';
-      if (code !== 'en' && !document.querySelector('select.goog-te-combo')) loadGoogleTranslate();
+      persistLang(code);
+      if (code !== 'en' && !document.querySelector('select.goog-te-combo')) ensureGoogleTranslate();
       const trySet = () => {
         const combo = document.querySelector('select.goog-te-combo');
         if (combo) {
@@ -209,6 +222,7 @@
 
     // Show the current language label if one is already active.
     (function initLang() {
+      syncLangCookie();
       const code = currentLangCode();
       const lang = LANGUAGES.find((l) => l.code === code);
       if (lang) langCurrent.textContent = lang.name;
