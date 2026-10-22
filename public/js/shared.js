@@ -277,8 +277,45 @@ function setSiteLanguage(code) {
 }
 
 let googleTranslateLoading = false;
+
+// Everything Google injects on top of the page: the translation banner
+// ("The content of this secure page will be sent to Google..."), the language
+// menu and the tooltips.
+const GOOGLE_UI_SELECTOR =
+  '.goog-te-banner-frame, .goog-te-menu-frame, .goog-te-balloon-frame, .goog-tooltip, #goog-gt-tt, iframe[src*="translate.google.com"], iframe[src*="translate.googleapis.com"]';
+
+function stripGoogleUi(node) {
+  if (!node || node.nodeType !== 1 || !node.matches) return;
+  if (node.matches(GOOGLE_UI_SELECTOR)) {
+    node.remove();
+    return;
+  }
+  if (node.querySelectorAll) {
+    node.querySelectorAll(GOOGLE_UI_SELECTOR).forEach((el) => el.remove());
+  }
+}
+
+let googleUiWatcher = null;
+function watchGoogleUi() {
+  if (googleUiWatcher || !document.body) return;
+  stripGoogleUi(document.body);
+  if (typeof MutationObserver === 'undefined') return;
+  googleUiWatcher = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType !== 1) continue;
+        const cls = typeof node.className === 'string' ? node.className : '';
+        const hasFrame = node.tagName === 'IFRAME' || (node.querySelector && node.querySelector('iframe'));
+        if (cls.indexOf('goog') !== -1 || hasFrame) stripGoogleUi(node);
+      }
+    }
+  });
+  googleUiWatcher.observe(document.body, { childList: true, subtree: true });
+}
+
 function loadGoogleTranslate() {
   syncLanguageCookie();
+  watchGoogleUi();
   if (window.google && window.google.translate) return;
   if (googleTranslateLoading) return;
   if (document.querySelector('script[data-google-translate]')) return;
@@ -295,15 +332,19 @@ function loadGoogleTranslate() {
 
   window.googleTranslateElementInit = function init() {
     new google.translate.TranslateElement({ pageLanguage: 'en', autoDisplay: false }, 'google_translate_element');
+    watchGoogleUi();
     const code = currentLanguageCode();
     if (!code || code === 'en') return;
     let tries = 0;
     const timer = setInterval(() => {
       const combo = document.querySelector('select.goog-te-combo');
       if (combo) {
-        combo.value = code;
-        combo.dispatchEvent(new Event('change'));
+        if (combo.value !== code) {
+          combo.value = code;
+          combo.dispatchEvent(new Event('change'));
+        }
         clearInterval(timer);
+        setTimeout(watchGoogleUi, 100);
       } else if (++tries > 50) {
         clearInterval(timer);
       }

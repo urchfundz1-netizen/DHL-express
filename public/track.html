@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/styles.css?v=3" />
   <link rel="preload" as="image" href="/images/Modern Atrium Walkway Worker.webp" type="image/webp" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
@@ -123,98 +123,6 @@
       vertical-align: 3px;
     }
 
-    /* Google-style language selector */
-    .lang-select { position: relative; }
-    .lang-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: inherit;
-      font-size: 13px;
-      padding: 6px 4px;
-      line-height: 1;
-    }
-    .lang-btn:hover { text-decoration: underline; }
-    .lang-globe { width: 16px; height: 16px; }
-    .lang-caret { width: 12px; height: 12px; transition: transform 0.18s ease; }
-    .lang-select.open .lang-caret { transform: rotate(180deg); }
-
-    .lang-menu {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      width: 300px;
-      max-width: 78vw;
-      background: #fff;
-      color: #202124;
-      border-radius: 12px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
-      border: 1px solid #e6e6e6;
-      padding: 8px;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(-6px);
-      transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s;
-      z-index: 50;
-    }
-    .lang-select.open .lang-menu {
-      opacity: 1;
-      visibility: visible;
-      transform: translateY(0);
-    }
-
-    .lang-search {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-bottom: 1px solid #eee;
-      color: #5f6368;
-    }
-    .lang-search svg { width: 16px; height: 16px; flex-shrink: 0; }
-    .lang-search input {
-      border: none;
-      outline: none;
-      width: 100%;
-      font-size: 14px;
-      color: #202124;
-      background: transparent;
-    }
-
-    .lang-list {
-      list-style: none;
-      margin: 6px 0 0;
-      padding: 0;
-      max-height: 320px;
-      overflow-y: auto;
-    }
-    .lang-list li {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 14px;
-      cursor: pointer;
-      color: #202124;
-    }
-    .lang-list li:hover { background: #f1f3f4; }
-    .lang-list li.selected { background: #e8f0fe; color: #1967d2; font-weight: 600; }
-    .lang-list li .lang-native { color: #80868b; font-size: 12px; }
-    .lang-list li.selected .lang-native { color: #1967d2; }
-    .lang-list .lang-empty {
-      padding: 16px 12px;
-      color: #80868b;
-      font-size: 13px;
-      cursor: default;
-      justify-content: center;
-    }
-    .lang-list .lang-empty:hover { background: transparent; }
-
     /* Hide every piece of UI Google Translate injects */
     #google_translate_element {
       position: absolute !important;
@@ -229,8 +137,9 @@
     }
     .skiptranslate,
     .goog-te-banner-frame,
-    .goog-te-balloon-frame,
     .goog-te-menu-frame,
+    .goog-te-balloon-frame,
+    .goog-te-button,
     #goog-gt-tt {
       display: none !important;
       visibility: hidden !important;
@@ -611,20 +520,8 @@
         </a>
 
       <div class="top-links">
-        <div class="lang-select" id="langSelect">
-          <button class="lang-btn" id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Select language">
-            <svg class="lang-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18z"/></svg>
-            <span id="langCurrent">English</span>
-            <svg class="lang-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-          <div class="lang-menu" id="langMenu" role="listbox" aria-label="Language">
-            <div class="lang-search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-              <input id="langSearch" type="text" placeholder="Search language" autocomplete="off" spellcheck="false" />
-            </div>
-            <ul class="lang-list" id="langList"></ul>
-          </div>
-        </div>
+        <select id="trackLanguage" data-language-select aria-label="Language"
+          class="rounded-lg border border-ink/15 bg-white/70 px-2 py-2 text-xs font-semibold text-ink focus:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/30 max-w-[7.5rem] sm:max-w-[9.5rem]"></select>
       </div>
     </div>
   </header>
@@ -700,13 +597,13 @@
     <span></span>
   </button>
 
-  <script src="/js/shared.js"></script>
+  <script src="/js/shared.js?v=3"></script>
   <script src="/js/track-page.js"></script>
 
   <!-- Google Translate element (driven by the custom dropdown above) -->
   <div id="google_translate_element" style="position:absolute;left:-9999px;height:0;overflow:hidden;"></div>
 
-  <script src="/js/track-languages.js"></script>
+  <script src="/js/track-languages.js?v=3"></script>
 
 </body>
 </html>
