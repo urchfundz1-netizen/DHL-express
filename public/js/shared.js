@@ -280,18 +280,41 @@ let googleTranslateLoading = false;
 
 // Everything Google injects on top of the page: the translation banner
 // ("The content of this secure page will be sent to Google..."), the language
-// menu and the tooltips.
+// menu and the tooltips. The current widget no longer uses
+// .goog-te-banner-frame - it appends an iframe with an obfuscated class name
+// (VIpgJd-...) plus "skiptranslate" to the body, so match on that instead.
 const GOOGLE_UI_SELECTOR =
-  '.goog-te-banner-frame, .goog-te-menu-frame, .goog-te-balloon-frame, .goog-tooltip, #goog-gt-tt, iframe[src*="translate.google.com"], iframe[src*="translate.googleapis.com"]';
+  'iframe.skiptranslate, .goog-te-banner-frame, .goog-te-menu-frame, .goog-te-balloon-frame, .goog-te-float-top, .goog-te-float-bottom, .goog-te-ftab-float, .goog-tooltip, .goog-gt-popup, #goog-gt-tt, iframe[src*="translate.google.com"], iframe[src*="translate.googleapis.com"]';
+
+function hideGoogleUi(node) {
+  if (!node || node.nodeType !== 1) return;
+  // The banner lives in a cross-origin iframe: hide it instead of removing
+  // it from the DOM, so the widget keeps working.
+  if (node.style && node.style.setProperty) {
+    node.style.setProperty('display', 'none', 'important');
+    node.style.setProperty('visibility', 'hidden', 'important');
+  }
+  if (node.setAttribute) node.setAttribute('aria-hidden', 'true');
+}
 
 function stripGoogleUi(node) {
   if (!node || node.nodeType !== 1 || !node.matches) return;
   if (node.matches(GOOGLE_UI_SELECTOR)) {
-    node.remove();
+    if (node.tagName === 'IFRAME') {
+      hideGoogleUi(node);
+    } else {
+      node.remove();
+    }
     return;
   }
   if (node.querySelectorAll) {
-    node.querySelectorAll(GOOGLE_UI_SELECTOR).forEach((el) => el.remove());
+    node.querySelectorAll(GOOGLE_UI_SELECTOR).forEach((el) => {
+      if (el.tagName === 'IFRAME') {
+        hideGoogleUi(el);
+      } else {
+        el.remove();
+      }
+    });
   }
 }
 

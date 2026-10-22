@@ -24,13 +24,23 @@
     visibility: hidden !important;
     pointer-events: none !important;
   }
+  /* The current widget no longer uses .goog-te-banner-frame. Its banner is an
+     iframe with an obfuscated class (VIpgJd-...) plus "skiptranslate", and it
+     also renders a .goog-te-float-* bar, so target the stable markers. */
+  iframe.skiptranslate,
   .goog-te-banner-frame,
   .goog-te-banner-frame.skiptranslate,
   iframe.goog-te-banner-frame,
+  .goog-te-float-top,
+  .goog-te-float-bottom,
+  .goog-te-ftab-float,
   .goog-te-menu-frame,
   .goog-te-balloon-frame,
   .goog-te-button,
+  .goog-te-gadget,
+  .goog-te-gadget-simple,
   .goog-tooltip,
+  .goog-gt-popup,
   #goog-gt-tt,
   iframe[src*="translate.google.com"],
   iframe[src*="translate.googleapis.com"] {
