@@ -297,8 +297,20 @@ function hideGoogleUi(node) {
   if (node.setAttribute) node.setAttribute('aria-hidden', 'true');
 }
 
+function isForeignIframe(el) {
+  if (!el || el.tagName !== 'IFRAME') return false;
+  return !(el.hasAttribute && el.hasAttribute('data-allow-iframe'));
+}
+
 function stripGoogleUi(node) {
   if (!node || node.nodeType !== 1 || !node.matches) return;
+  // Any iframe dropped into the page is foreign UI (the site has no frames of
+  // its own): hide it so a future Google class rename cannot bring the
+  // banner back. Opt out explicitly with data-allow-iframe.
+  if (isForeignIframe(node)) {
+    hideGoogleUi(node);
+    return;
+  }
   if (node.matches(GOOGLE_UI_SELECTOR)) {
     if (node.tagName === 'IFRAME') {
       hideGoogleUi(node);
@@ -308,6 +320,9 @@ function stripGoogleUi(node) {
     return;
   }
   if (node.querySelectorAll) {
+    node.querySelectorAll('iframe').forEach((el) => {
+      if (isForeignIframe(el)) hideGoogleUi(el);
+    });
     node.querySelectorAll(GOOGLE_UI_SELECTOR).forEach((el) => {
       if (el.tagName === 'IFRAME') {
         hideGoogleUi(el);
