@@ -125,7 +125,24 @@ app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
 // or image request must never wait for a cold start or a database round-trip.
 // On Vercel these are normally served by the CDN (see vercel.json), but this
 // also keeps local `node server/index.js` usage working.
-app.use(express.static(publicDir, { extensions: ['html'], maxAge: isProd ? '1h' : 0 }));
+//
+// CSS and JS are revalidated on every request (max-age=0 + ETag), so a deploy
+// is picked up immediately without having to bump a ?v= query string in every
+// HTML file. HTML itself is never cached.
+app.use(
+  express.static(publicDir, {
+    extensions: ['html'],
+    maxAge: 0,
+    setHeaders(res, filePath) {
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === '.html') {
+        res.setHeader('Cache-Control', 'no-cache');
+      } else if (ext === '.css' || ext === '.js') {
+        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+      }
+    },
+  })
+);
 
 // Ensure Firestore is reachable before any dynamic route runs.
 app.use(async (req, res, next) => {
