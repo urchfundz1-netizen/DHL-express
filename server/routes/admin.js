@@ -18,7 +18,7 @@ import {
   recentShipments,
   recentEvents,
   delayedShipments,
-  refreshAutoStatuses,
+  refreshAutoStatusesThrottled,
 } from '../lib/shipments.js';
 import { listActivity } from '../lib/activity.js';
 import { ALL_STATUSES, CURRENCIES, DELAY_REASONS, PACKAGE_CATEGORIES, SHIPPING_METHODS, STATUS_TONE } from '../lib/constants.js';
@@ -69,6 +69,9 @@ adminRouter.get('/constants', (req, res) => {
 // ---- Dashboard -------------------------------------------------------------
 adminRouter.get('/dashboard', async (req, res, next) => {
   try {
+    // Refresh once up front so every parallel query below sees the same
+    // statuses (subsequent throttled calls inside them become no-ops).
+    await refreshAutoStatusesThrottled();
     const [stats, recent, events, delayed] = await Promise.all([
       getDashboardStats(),
       recentShipments(6),
@@ -152,7 +155,7 @@ adminRouter.get('/recipients', async (req, res, next) => {
 // ---- Reports ---------------------------------------------------------------
 adminRouter.get('/reports', async (req, res, next) => {
   try {
-    await refreshAutoStatuses();
+    await refreshAutoStatusesThrottled();
     const rows = await queryRows('shipments', {
       select: ['status', 'shipping_method', 'created_at'],
     });

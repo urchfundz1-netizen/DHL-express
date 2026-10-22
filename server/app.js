@@ -106,10 +106,17 @@ app.use(
 // Behind Vercel (and any reverse proxy) so secure cookies + req.secure work.
 app.set('trust proxy', 1);
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+// Browsers request /favicon.ico even when the page declares an SVG icon.
+// Redirect it instead of serving a 404.
+app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
 
-// Ensure Firestore is reachable before any route runs.
+// Static files are served before any Firestore/session middleware: a CSS, JS
+// or image request must never wait for a cold start or a database round-trip.
+// On Vercel these are normally served by the CDN (see vercel.json), but this
+// also keeps local `node server/index.js` usage working.
+app.use(express.static(publicDir, { extensions: ['html'], maxAge: isProd ? '1h' : 0 }));
+
+// Ensure Firestore is reachable before any dynamic route runs.
 app.use(async (req, res, next) => {
   try {
     await bootstrap();
@@ -118,6 +125,9 @@ app.use(async (req, res, next) => {
     next(err);
   }
 });
+
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Sessions live in Firestore, which is what makes login work across devices
 // and across serverless instances.
@@ -156,14 +166,6 @@ app.use('/api', publicRouter);
 app.use('/api/cron', cronRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
-
-// Browsers request /favicon.ico even when the page declares an SVG icon.
-// Redirect it instead of serving a 404.
-app.get('/favicon.ico', (req, res) => res.redirect(301, '/favicon.svg'));
-
-// Static files. On Vercel these are normally served by the CDN (see
-// vercel.json), but this keeps local `node server/index.js` usage working.
-app.use(express.static(publicDir, { extensions: ['html'], maxAge: isProd ? '1h' : 0 }));
 
 const pageMap = {
   '/track': 'track.html',

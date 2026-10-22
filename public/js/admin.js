@@ -1279,9 +1279,9 @@ async function viewSettings(view) {
       </div>
       <div class="card p-6">
         <h2 class="font-bold">About this platform</h2>
-        <p class="mt-2 text-sm text-ink/60">SwiftNova Global Express — a demonstration delivery &amp; shipment tracking platform. All data is stored in an embedded PostgreSQL database and persists across restarts.</p>
+        <p class="mt-2 text-sm text-ink/60">SwiftNova Global Express — a demonstration delivery &amp; shipment tracking platform. All data is stored in Firebase Firestore and persists across devices and restarts.</p>
         <ul class="mt-4 space-y-2 text-sm text-ink/60">
-          <li>• Shipments, events, comments, and delay history are fully relational.</li>
+          <li>• Shipments, events, comments, and delay history are fully linked.</li>
           <li>• Tracking numbers are generated server-side and are unique.</li>
           <li>• Every administrative action is recorded in the audit log.</li>
         </ul>

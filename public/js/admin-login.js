@@ -60,10 +60,17 @@ form.addEventListener('submit', async (e) => {
   btn.textContent = 'Signing in…';
 
   try {
+    // The bootstrap request above normally has the cookie ready; make sure of
+    // it before submitting so a fast click cannot race it.
+    let csrfToken = getCsrfToken();
+    if (!csrfToken) {
+      try { await fetch('/api/constants', { credentials: 'same-origin' }); } catch (e) { /* ignore */ }
+      csrfToken = getCsrfToken();
+    }
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': getCsrfToken() },
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
       body: JSON.stringify({ email, password }),
     });
     const data = await res.json().catch(() => ({}));

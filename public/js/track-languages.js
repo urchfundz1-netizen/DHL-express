@@ -170,10 +170,25 @@
       );
     }
 
+    // The widget is a few hundred KB, so it is only fetched when a non-English
+    // language is actually selected (or was already chosen on a previous visit).
+    let translateLoading = false;
+    function loadGoogleTranslate() {
+      if ((window.google && window.google.translate) || document.getElementById('google-translate-script')) return;
+      if (translateLoading) return;
+      translateLoading = true;
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
     // Drive the hidden Google <select> that the widget injects.
     function setLanguage(code) {
       // Persist across every page (Google reads this cookie on init).
       document.cookie = 'googtrans=' + (code === 'en' ? '/en/en' : '/en/' + code) + ';path=/';
+      if (code !== 'en' && !document.querySelector('select.goog-te-combo')) loadGoogleTranslate();
       const trySet = () => {
         const combo = document.querySelector('select.goog-te-combo');
         if (combo) {
@@ -187,7 +202,7 @@
         // Widget may still be initialising; retry briefly.
         let tries = 0;
         const iv = setInterval(() => {
-          if (trySet() || ++tries > 20) clearInterval(iv);
+          if (trySet() || ++tries > 50) clearInterval(iv);
         }, 200);
       }
     }

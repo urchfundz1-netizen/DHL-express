@@ -1,9 +1,8 @@
 // server/routes/auth.js
-// Admin authentication: login, logout, session, CSRF token.
+// Admin authentication: login, logout and session.
 
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import crypto from 'node:crypto';
 import net from 'node:net';
 import { queryRows, getRow, updateRow } from '../db/firestore.js';
 import { hashPassword, verifyPassword, requireAuth, loadAdmin, SESSION_COOKIE_NAME } from '../lib/auth.js';
@@ -104,16 +103,15 @@ authRouter.post('/login', loginIpLimiter, loginAccountLimiter, async (req, res, 
       return res.status(401).json({ ok: false, error: 'Invalid email or password.' });
     }
 
-    // Regenerate session to prevent fixation, but preserve the CSRF token so
-    // the client's existing token stays valid across the privilege change.
-    const csrf = req.session.csrfToken;
+    // Regenerate the session to prevent fixation. The CSRF token is stateless
+    // (signed cookie), so it survives the privilege change without being
+    // copied into the new session.
     req.session.regenerate((err) => {
       if (err) return next(err);
       req.session.adminId = admin.id;
       req.session.adminName = admin.name;
       req.session.adminEmail = admin.email;
       req.session.adminRole = admin.role;
-      req.session.csrfToken = csrf || (req.session.csrfToken = crypto.randomBytes(24).toString('hex'));
 
       updateRow('admins', admin.id, { last_login_at: new Date() }).catch(() => {});
       logActivity(admin, 'LOGIN', 'admin', admin.id, 'Signed in', req.ip);

@@ -9,6 +9,7 @@
 import express from 'express';
 import { purgeExpiredSessions } from '../lib/sessions.js';
 import { purgeExpiredRateLimits } from '../lib/rate-limit-store.js';
+import { refreshAutoStatuses } from '../lib/shipments.js';
 
 export const cronRouter = express.Router();
 
@@ -42,15 +43,28 @@ cronRouter.get('/purge-rate-limits', async (req, res, next) => {
   }
 });
 
-// The daily job runs both sweeps. Vercel's Hobby plan only allows a couple of
-// cron entries, so one endpoint does the whole housekeeping instead of one
-// endpoint per task.
+// Date-driven shipment statuses only change at day boundaries, so they are
+// recalculated by the daily job instead of before every read.
+cronRouter.get('/refresh-statuses', async (req, res, next) => {
+  try {
+    if (!authorized(req)) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    const updated = await refreshAutoStatuses();
+    res.json({ ok: true, statusesUpdated: updated });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// The daily job runs the whole housekeeping. Vercel's Hobby plan only allows
+// a couple of cron entries, so one endpoint does every sweep + the status
+// refresh instead of one endpoint per task.
 cronRouter.get('/purge-maintenance', async (req, res, next) => {
   try {
     if (!authorized(req)) return res.status(401).json({ ok: false, error: 'Unauthorized' });
     await purgeExpiredSessions();
     const removed = await purgeExpiredRateLimits();
-    res.json({ ok: true, rateLimitsRemoved: removed });
+    const statusesUpdated = await refreshAutoStatuses();
+    res.json({ ok: true, rateLimitsRemoved: removed, statusesUpdated });
   } catch (err) {
     next(err);
   }

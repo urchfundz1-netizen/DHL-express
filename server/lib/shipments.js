@@ -12,6 +12,7 @@ import {
   setRow,
   updateRow,
   deleteRow,
+  deleteDocs,
   transaction,
   nextNumericIds,
 } from '../db/firestore.js';
@@ -53,6 +54,9 @@ const PUBLIC_SHIPMENT_FIELDS = [
   'recipient_contact', 'destination_address',
   'category', 'weight_kg', 'dimensions', 'shipping_method', 'customs_fee', 'customs_fee_currency',
   'pickup_date', 'dispatch_date',
+  // Internal fields needed to refresh the derived status; stripped before the
+  // response is sent.
+  'status_mode', 'notify_customer', 'archived',
 ];
 
 // Fields the admin list view shows.
@@ -147,9 +151,9 @@ export async function createShipment(input, admin) {
 // ---- Read (admin detail) ---------------------------------------------------
 
 export async function getShipmentAdmin(id) {
-  await refreshAutoStatuses();
-  const shipment = await getRow('shipments', id);
-  if (!shipment) throw new HttpError(404, 'Shipment not found');
+  const found = await getRow('shipments', id);
+  if (!found) throw new HttpError(404, 'Shipment not found');
+  const shipment = await refreshShipmentAutoStatus(found);
 
   const [events, comments, history] = await Promise.all([
     queryWithFallback('tracking_events', {
@@ -479,12 +483,27 @@ export async function deleteShipment(id, admin) {
     queryRows('delivery_estimate_history', { filters: [{ field: 'shipment_id', op: '==', value: Number(id) }], select: ['id'] }),
   ]);
 
-  await transaction(async (tx) => {
-    tx.delete('shipments', id);
-    for (const e of events) tx.delete('tracking_events', e.id);
-    for (const c of comments) tx.delete('comments', c.id);
-    for (const h of history) tx.delete('delivery_estimate_history', h.id);
-  });
+  const deletes = [
+    { name: 'shipments', id },
+    ...events.map((e) => ({ name: 'tracking_events', id: e.id })),
+    ...comments.map((c) => ({ name: 'comments', id: c.id })),
+    ...history.map((h) => ({ name: 'delivery_estimate_history', id: h.id })),
+  ];
+
+  if (deletes.length <= 450) {
+    // Small cascades stay atomic: the shipment and all of its history either
+    // disappear together or not at all.
+    await transaction(async (tx) => {
+      tx.delete('shipments', id);
+      for (const e of events) tx.delete('tracking_events', e.id);
+      for (const c of comments) tx.delete('comments', c.id);
+      for (const h of history) tx.delete('delivery_estimate_history', h.id);
+    });
+  } else {
+    // A transaction cannot exceed 500 writes, so shipments with a very long
+    // history are removed in batches (children first, shipment last).
+    await deleteDocs([...deletes.slice(1), deletes[0]]);
+  }
 
   await logActivity(admin, 'DELETE_SHIPMENT', 'shipment', id, `Deleted ${existing.tracking_number}`);
 
@@ -562,18 +581,55 @@ export function deriveStatus(ship, now = new Date()) {
   return ship.status || 'Registered';
 }
 
+// Recalculate the date-driven status of a single shipment. Used on read paths
+// (public tracking, admin detail) so they stay accurate without scanning the
+// whole collection on every request.
+async function refreshShipmentAutoStatus(ship, now = new Date()) {
+  if (!ship || ship.status_mode !== 'auto' || ship.archived || ship.delivered_at) return ship;
+
+  const next = deriveStatus(ship, now);
+  if (next === ship.status) return ship;
+
+  const ids = await nextNumericIds(['tracking_events']);
+  const updatedAt = new Date();
+  await transaction(async (tx) => {
+    tx.update('shipments', ship.id, { status: next, updated_at: updatedAt });
+    tx.set('tracking_events', ids.tracking_events, {
+      id: ids.tracking_events,
+      shipment_id: ship.id,
+      tracking_number: ship.tracking_number,
+      status: next,
+      location: ship.destination_city,
+      description: `Status updated automatically to "${next}" based on the delivery schedule.`,
+      created_at: updatedAt,
+      created_by: null,
+    });
+  });
+
+  if (ship.notify_customer) {
+    maybeNotify(eventForStatus(next), { shipment: ship, status: next }).catch(() => {});
+  }
+
+  return { ...ship, status: next, updated_at: updatedAt };
+}
+
 // Recalculate every auto-mode shipment whose date-driven status moved on.
-// Runs before reads so lists, counts and the public page always agree.
+// Run from the daily cron job instead of on every read: the status only
+// changes at day boundaries, so scanning the collection per request is waste.
 export async function refreshAutoStatuses(now = new Date()) {
+  // delivered_at is not filtered in Firestore: legacy documents may not have
+  // the field at all, and `== null` would not match those. Delivered rows are
+  // skipped in the loop instead.
   const rows = await queryRows('shipments', {
     filters: [
       { field: 'status_mode', op: '==', value: 'auto' },
       { field: 'archived', op: '==', value: false },
-      { field: 'delivered_at', op: '==', value: null },
     ],
   });
 
+  let updated = 0;
   for (const ship of rows) {
+    if (ship.delivered_at) continue;
     const next = deriveStatus(ship, now);
     if (next === ship.status) continue;
 
@@ -597,6 +653,26 @@ export async function refreshAutoStatuses(now = new Date()) {
     if (ship.notify_customer) {
       maybeNotify(eventForStatus(next), { shipment: ship, status: next }).catch(() => {});
     }
+    updated += 1;
+  }
+  return updated;
+}
+
+// Safety net for list/dashboard/report reads: the daily cron is the primary
+// trigger, but it must not be the only one (local dev has no cron, and a cron
+// request can be misconfigured). At most one full refresh runs per interval
+// per process, instead of on every request.
+const AUTO_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+let lastAutoRefreshAt = 0;
+
+export async function refreshAutoStatusesThrottled() {
+  if (Date.now() - lastAutoRefreshAt < AUTO_REFRESH_INTERVAL_MS) return;
+  lastAutoRefreshAt = Date.now();
+  try {
+    await refreshAutoStatuses();
+  } catch (err) {
+    lastAutoRefreshAt = 0;
+    console.warn('[shipments] Automatic status refresh failed:', err.message);
   }
 }
 
@@ -606,8 +682,6 @@ export async function trackPublicShipment(rawTracking) {
   const norm = normalizeTrackingInput(rawTracking);
   if (!norm) throw new ValidationError('Please enter a tracking number', 'tracking');
 
-  await refreshAutoStatuses();
-
   const found = await queryRows('shipments', {
     filters: [{ field: 'tracking_number', op: '==', value: norm }],
     limit: 1,
@@ -616,7 +690,7 @@ export async function trackPublicShipment(rawTracking) {
   if (found.length === 0) {
     throw new HttpError(404, 'No shipment found for that tracking number. Please check and try again.');
   }
-  const shipment = found[0];
+  const shipment = await refreshShipmentAutoStatus(found[0]);
 
   const [events, comments] = await Promise.all([
     queryWithFallback('tracking_events', {
@@ -648,8 +722,10 @@ export async function trackPublicShipment(rawTracking) {
     select: ['id', 'text', 'admin_name', 'created_at'],
   });
 
+  const { status_mode, notify_customer, archived, ...publicShipment } = shipment;
+
   return {
-    shipment,
+    shipment: publicShipment,
     events: sortByCreatedAt(eventRows, 'asc'),
     customerComments: sortByCreatedAt(commentRows, 'desc'),
   };
@@ -658,7 +734,7 @@ export async function trackPublicShipment(rawTracking) {
 // ---- List (admin, with search/filter/sort/pagination) ---------------------
 
 export async function listShipments(query = {}) {
-  await refreshAutoStatuses();
+  await refreshAutoStatusesThrottled();
   const { search = '', status = '', sort = 'created_at', dir = 'desc', page = 1, limit = 15, archived = 'false' } = query;
 
   const sortable = {
@@ -740,7 +816,7 @@ function comparator(field, dir) {
 // ---- Dashboard stats -------------------------------------------------------
 
 export async function getDashboardStats() {
-  await refreshAutoStatuses();
+  await refreshAutoStatusesThrottled();
   const rows = await queryRows('shipments', {
     select: ['id', 'status', 'archived', 'estimated_delivered_at'],
   });
@@ -784,7 +860,7 @@ export async function getDashboardStats() {
 // ---- Recent activity feeds for the dashboard ------------------------------
 
 export async function recentShipments(limit = 6) {
-  await refreshAutoStatuses();
+  await refreshAutoStatusesThrottled();
   const rows = await queryRows('shipments', {
     orders: [['created_at', 'desc']],
     limit,
@@ -817,7 +893,7 @@ export async function recentEvents(limit = 8) {
 }
 
 export async function delayedShipments(limit = 20) {
-  await refreshAutoStatuses();
+  await refreshAutoStatusesThrottled();
   const rows = await queryRows('shipments', {
     filters: [{ field: 'archived', op: '==', value: false }],
     select: [

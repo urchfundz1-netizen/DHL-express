@@ -226,6 +226,24 @@ export async function deleteRow(name, id) {
   await col(name).doc(String(id)).delete();
 }
 
+// Delete many documents across collections in batches. Firestore caps a batch
+// (and a transaction) at 500 writes, so large cascades are split up.
+export async function deleteDocs(entries) {
+  let batch = db.batch();
+  let count = 0;
+  for (const { name, id } of entries) {
+    batch.delete(col(name).doc(String(id)));
+    count += 1;
+    if (count >= 400) {
+      // eslint-disable-next-line no-await-in-loop
+      await batch.commit();
+      batch = db.batch();
+      count = 0;
+    }
+  }
+  if (count > 0) await batch.commit();
+}
+
 // Query helper.
 //   filters : [{ field, op, value }]  op: '==' | '!=' | '<' | '<=' | '>' | '>=' | 'array-contains'
 //   orders  : [[field, 'asc' | 'desc']]
